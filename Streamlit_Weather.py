@@ -104,8 +104,7 @@ if st.button("날씨 정보 가져오기"):
         daily_summary['최저온도'] = daily_summary['최저온도'].round(1).astype(str) + ' °C'
         daily_summary.rename(columns={'날짜': '날짜'}, inplace=True)
         st.dataframe(daily_summary, use_container_width=True)
-        st.markdown("---")
-
+        
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=df['날짜/시간'], y=df['예상온도 (°C)'], mode='lines', name='예상온도 (°C)'))
         fig.add_trace(go.Scatter(x=df['날짜/시간'], y=df['체감온도 (°C)'], mode='lines', name='체감온도 (°C)'))
@@ -130,6 +129,7 @@ if st.button("날씨 정보 가져오기"):
 
     else:
         st.warning("도시 이름을 입력해 주세요.")
+
 
 
 
