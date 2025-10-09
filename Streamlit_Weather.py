@@ -28,7 +28,7 @@ def contains_hangul(text):
 st.title("국내 날씨 예보 🌤️")
 st.markdown("---")
 
-city_name = st.text_input("국가, 지역 등 지명 입력", "서울"")
+city_name = st.text_input("국가, 지역 등 지명 입력", "서울")
 
 if st.button("날씨 정보 가져오기"):
     if not API_KEY or API_KEY == "YOUR_OPENWEATHERMAP_API_KEY":
@@ -130,4 +130,5 @@ if st.button("날씨 정보 가져오기"):
 
     else:
         st.warning("도시 이름을 입력해 주세요.")
+
 
