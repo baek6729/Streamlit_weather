@@ -31,17 +31,18 @@ st.markdown("---")
 city_name = st.text_input("지명 입력", "서울")
 
 if st.button("날씨 정보 가져오기"):
-    if not API_KEY or API_KEY == "YOUR_OPENWEATHERMAP_API_KEY":
-        st.error("OpenWeatherMap API Key를 설정해 주세요.")
+    if not API_KEY:
+        st.error("OpenWeatherMap API Key가 설정되어 있지 않습니다.")
     elif city_name:
-        search_query = city_name
+        search = city_name
         if contains_hangul(city_name):
-            search_query = f"{city_name},KR"
+            search = f"{city_name},KR"
+            
         try:
-            geo_params = {'q': search_query, 'limit': 1, 'appid': API_KEY}
+            geo_params = {'q': search, 'limit': 1, 'appid': API_KEY}
             geo_response = requests.get(GEO_URL, params=geo_params).json()
             if not geo_response:
-                st.error(f"'{city_name}'에 대한 지리 정보를 찾을 수 없습니다.")
+                st.error(f"'{city_name}'에 대한 정보를 찾을 수 없습니다.")
                 st.stop()
             lat = geo_response[0]['lat']
             lon = geo_response[0]['lon']
@@ -54,7 +55,7 @@ if st.button("날씨 정보 가져오기"):
             response = requests.get(BASE_URL, params=weather_params)
             data = response.json()
             if data.get('cod') != '200':
-                st.error(f"날씨 정보를 가져오는 데 실패했습니다: {data.get('message', '알 수 없는 오류')}")
+                st.error("날씨 정보를 가져오는 데 실패했습니다.(API 키 또는 서버 문제)")
                 st.stop()
         except Exception as e:
             st.error(f"날씨 API 호출 중 오류 발생: {e}")
@@ -129,7 +130,6 @@ if st.button("날씨 정보 가져오기"):
 
     else:
         st.warning("도시 이름을 입력해 주세요.")
-
 
 
 
