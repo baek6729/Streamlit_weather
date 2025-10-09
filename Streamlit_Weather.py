@@ -25,10 +25,10 @@ def contains_hangul(text):
             return True
     return False
 
-st.title("간편 날씨 예보 🌤️")
+st.title("국내 날씨 예보 🌤️")
 st.markdown("---")
 
-city_name = st.text_input("국가, 지역 등 지명 입력", "서울", help="도시 이름(한국어/영어)을 입력해 주세요 (예: 서울, Incheon, London)")
+city_name = st.text_input("국가, 지역 등 지명 입력", "서울"")
 
 if st.button("날씨 정보 가져오기"):
     if not API_KEY or API_KEY == "YOUR_OPENWEATHERMAP_API_KEY":
@@ -66,8 +66,6 @@ if st.button("날씨 정보 가져오기"):
         st.caption(f"**현재 위치:** 위도 {lat:.2f}, 경도 {lon:.2f}")
         st.markdown("---")
 
-
-
         display_city_name = geo_response[0].get('local_names', {}).get('ko', city_name)
         st.subheader(f"📍 {display_city_name} 날씨 정보")
         current_weather = data['list'][0]
@@ -79,9 +77,6 @@ if st.button("날씨 정보 가져오기"):
         st.write(f"**습도:** {current_humidity}%")
         st.markdown(f"**자세히 보기:** [OpenWeatherMap 예보 보기](https://openweathermap.org/city/{data['city']['id']})")
         st.markdown("---")
-
-
-
 
         st.subheader("일주일 날씨 요약")
         forecast_list = data['list']
@@ -111,10 +106,6 @@ if st.button("날씨 정보 가져오기"):
         st.dataframe(daily_summary, use_container_width=True)
         st.markdown("---")
 
-
-
-
-        st.subheader("날씨 예보 그래프")
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=df['날짜/시간'], y=df['예상온도 (°C)'], mode='lines', name='예상온도 (°C)'))
         fig.add_trace(go.Scatter(x=df['날짜/시간'], y=df['체감온도 (°C)'], mode='lines', name='체감온도 (°C)'))
@@ -139,3 +130,4 @@ if st.button("날씨 정보 가져오기"):
 
     else:
         st.warning("도시 이름을 입력해 주세요.")
+
