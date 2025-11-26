@@ -5,13 +5,13 @@ import numpy as np
 import plotly.graph_objects as go
 import base64
 import datetime
+# OpenWeatherMap Air Pollution API URL 추가
+AIR_POLLUTION_URL = "http://api.openweathermap.org/data/2.5/air_pollution"
 
 API_KEY = "f2907b0b1e074198de1ba6fb1928665f" 
 BASE_URL = "http://api.openweathermap.org/data/2.5/forecast"
 GEO_URL = "http://api.openweathermap.org/geo/1.0/direct"
-AIR_POLLUTION_URL = "http://api.openweathermap.org/data/2.5/air_pollution"
 
-# ... (WEATHER_TRANSLATION, AQI_STATUS, WEATHER_ICONS, contains_hangul 함수는 동일)
 
 WEATHER_TRANSLATION = {
     "clear sky": "맑음", "few clouds": "구름 조금", "scattered clouds": "구름 많음",
@@ -24,17 +24,10 @@ WEATHER_TRANSLATION = {
     "tornado": "태풍",
 }
 
+# 대기 질 지수(AQI) 번역 및 상태 정의
 AQI_STATUS = {
     1: ("좋음", "🟢"), 2: ("보통", "🟡"), 3: ("나쁨", "🟠"),
     4: ("상당히 나쁨", "🔴"), 5: ("매우 나쁨", "⚫"),
-}
-
-WEATHER_ICONS = {
-    "01d": "☀️", "01n": "🌙", "02d": "🌤️", "02n": "☁️",
-    "03d": "☁️", "03n": "☁️", "04d": "☁️", "04n": "☁️",
-    "09d": "🌧️", "09n": "🌧️", "10d": "🌦️", "10n": "🌧️",
-    "11d": "⛈️", "11n": "⛈️", "13d": "🌨️", "13n": "🌨️",
-    "50d": "🌫️", "50n": "🌫️",
 }
 
 def contains_hangul(text):
@@ -43,6 +36,7 @@ def contains_hangul(text):
             return True
     return False
 
+# 배경 이미지 설정 함수
 def get_base64_image(image_file):
     with open(image_file, "rb") as f:
         data = f.read()
@@ -90,7 +84,6 @@ def set_background(image_file='assets/background.jpg'):
 
 # --- 세션 상태 초기화 및 검색 함수 ---
 
-# 검색 상태를 관리하는 함수
 def initialize_session_state():
     if 'search_performed' not in st.session_state:
         st.session_state.search_performed = False
@@ -129,14 +122,18 @@ def fetch_weather_data(city_name):
     pollution_params = {'lat': lat, 'lon': lon, 'appid': API_KEY}
     pollution_response = requests.get(AIR_POLLUTION_URL, params=pollution_params).json()
 
-    # 데이터 저장
+    # 데이터 저장 (lat, lon을 추가하여 지도 표시를 가능하게 함)
     st.session_state.city_data = {
         'display_city_name': display_city_name,
+        'lat': lat,
+        'lon': lon,
         'weather_data': weather_data,
         'pollution_response': pollution_response
     }
     st.session_state.search_performed = True
-    st.rerun() # 데이터 로드 후 화면 갱신
+    
+    # st.experimental_rerun() 대신 st.rerun() 사용 (오류 해결)
+    st.rerun() 
 
 # --- Streamlit 앱 시작 ---
 
@@ -161,8 +158,18 @@ else:
     data = st.session_state.city_data['weather_data']
     pollution_response = st.session_state.city_data['pollution_response']
     display_city_name = st.session_state.city_data['display_city_name']
+    lat = st.session_state.city_data['lat']
+    lon = st.session_state.city_data['lon']
 
-    # --- UI 구성 시작 ---
+
+    # --- 지도 표시 섹션 (추가됨) ---
+    st.subheader(f"'{display_city_name}' 지역 🗺️")
+    map_data = pd.DataFrame({'lat': [lat], 'lon': [lon]})
+    st.map(map_data, zoom=10)
+    st.caption(f"**현재 위치:** 위도 {lat:.2f}, 경도 {lon:.2f}")
+    st.markdown("---")
+    # -----------------------------
+
     
     # 1. 상단 현재 날씨 정보
     st.markdown(f"## {display_city_name}")
@@ -170,7 +177,6 @@ else:
     current_weather = data['list'][0]
     current_temp = current_weather['main']['temp']
     
-    # 예보 목록에서 24시간 내 최고/최저 기온 계산
     forecast_list_24hr = data['list'][:8] 
     min_temp = min(item['main']['temp_min'] for item in forecast_list_24hr)
     max_temp = max(item['main']['temp_max'] for item in forecast_list_24hr)
@@ -180,9 +186,7 @@ else:
     current_desc_kr = WEATHER_TRANSLATION.get(current_desc_en, current_desc_en)
     weather_icon_code = current_weather['weather'][0]['icon']
     
-    # 현재 시각을 한국 시간대에 맞춰 포맷 (OpenWeatherMap은 UTC를 기준으로 dt_txt를 제공)
     current_dt_utc = pd.to_datetime(current_weather['dt_txt']).tz_localize('UTC')
-    # 한국 시간대 (KST)로 변환 (+9시간)
     current_time_kst = current_dt_utc.tz_convert('Asia/Seoul').strftime('%m월 %d일, 오후 %I:%M')
 
     # 큰 숫자 온도와 아이콘
@@ -200,7 +204,7 @@ else:
     
     st.markdown("---")
     
-    # 2. 미세먼지 정보 (단위 오류 수정됨: &micro;g/m&sup3; 사용)
+    # 2. 미세먼지 정보 (단위 오류 수정됨)
     st.markdown("### 💨 현재 대기 질 정보")
     if pollution_response and 'list' in pollution_response:
         current_air = pollution_response['list'][0]
@@ -300,7 +304,7 @@ else:
         """, unsafe_allow_html=True)
         st.markdown("---")
 
-    # 3. 화면 최하단에 새로운 검색바 배치 (이 부분이 핵심)
+    # 5. 화면 최하단에 새로운 검색바 배치
     st.markdown("---")
     st.markdown("### 📍 다른 지역 검색")
     
@@ -310,5 +314,3 @@ else:
             fetch_weather_data(new_city_name_input)
         else:
             st.warning("도시 이름을 입력해 주세요.")
-
-
