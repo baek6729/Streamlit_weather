@@ -197,74 +197,7 @@ for i, item in enumerate(tlist):
         tt = pd.to_datetime(item["dt_txt"]).strftime("%H시")
         ti = item["main"]["temp"]
         p = item["pop"] * 100
-        ic = fix_icon(item["weather"][0]["icon"])
-        
-        # 1. 시간
-        st.markdown(f"<div style='text-align: center; font-size: 0.9em;'>{tt}</div>", unsafe_allow_html=True)
-        
-        # 2. 날씨 아이콘
-        st.image(f"http://openweathermap.org/img/wn/{ic}.png", width=50, use_column_width="always")
-        
-        # 3. 온도 (굵게 표시)
-        st.markdown(f"<div style='text-align: center; font-weight: bold; font-size: 1.1em;'>{int(ti)}°</div>", unsafe_allow_html=True)
-        
-        # 4. 강수량 (💧 이모지와 함께 표시)
-        st.markdown(f"<div style='text-align: center; font-size: 0.9em;'>💧 {int(p)}%</div>", unsafe_allow_html=True)
-
-
-# 대기질
-st.subheader("대기질")
-if air and "list" in air:
-    info = air["list"][0]
-    aqi = info["main"]["aqi"]
-    txt, em = AQI_TEXT.get(aqi, ("?", ""))
-    pm25 = info["components"].get("pm2_5", 0)
-    pm10 = info["components"].get("pm10", 0)
-
-    st.write(f"AQI {em} | {txt}")
-    st.write(f"PM2.5: {pm25:.1f}, PM10: {pm10:.1f}")
-else:
-    st.write("대기질 정보 없음.")
-
-# --- 주간 예보 ---
-st.subheader("주간 날씨 예보")
-
-# 헤더 출력 (간격 최소화 적용)
-header_cols = st.columns([1, 1, 1, 1, 1])
-with header_cols[0]: st.markdown("##### **날짜**")
-with header_cols[1]: st.markdown("##### **강수량**")
-with header_cols[2]: st.markdown("##### **날씨**")
-with header_cols[3]: st.markdown("##### **최고온도**")
-with header_cols[4]: st.markdown("##### **최저온도**")
-
-# daily DataFrame의 요일 처리
-daily["요일"] = daily["날짜"].dt.strftime("%a").map(weekday_map).fillna(daily["날짜"].dt.strftime("%a"))
-daily["요일"] = np.where(daily.index==0, "오늘", daily["요일"])
-
-# Streamlit을 사용해서 주간 예보 표시
-for _, row in daily.iterrows():
-    c1, c2, c3, c4, c5 = st.columns([1,1,1,1,1])
-    with c1: st.write(row["요일"])
-    with c2: st.write(f"💧 {int(row['강수'])}%")
-    with c3: st.image(f"http://openweathermap.org/img/wn/{fix_icon(row['대표'])}.png", width=40)
-    with c4: st.write(f"**{int(row['최고'])}°**")
-    with c5: st.write(f"{int(row['최저'])}°")
-
-# --- 그래프 ---
-# st.subheader 제거
-
-# X축 라벨을 위한 데이터 준비
-daily_start = df.groupby(df['dt'].dt.date)['dt'].min().tolist()
-daily_labels_en = [pd.to_datetime(dt).strftime('%a') for dt in daily_start]
-daily_labels_kr = [weekday_map.get(d, d) for d in daily_labels_en]
-if daily_labels_kr:
-    daily_labels_kr[0] = '오늘'
-
-# 각 날짜의 12:00를 tickvals로 사용
-unique_dates = sorted(df['dt'].dt.date.unique())
-daily_tick_points = [datetime.datetime.combine(d, datetime.time(12, 0)) for d in unique_dates]
-
-# Plotly 그래프 생성
+        ic = fix_icon(item["weather"]씨")
 fig = go.Figure()
 fig.add_trace(go.Scatter(x=df["dt"], y=df["temp"], mode="lines+markers", name="온도"))
 fig.add_trace(go.Scatter(x=df["dt"], y=df["feel"], mode="lines+markers", name="체감온도"))
@@ -307,3 +240,4 @@ if st.button("조회 다시"):
 # 지도
 st.subheader("위치 지도")
 st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}))
+
