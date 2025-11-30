@@ -166,8 +166,8 @@ fl = now["main"]["feels_like"]
 desc = W_DESC.get(now["weather"][0]["description"], "")
 icon = fix_icon(now["weather"][0]["icon"])
 
-today_max = daily.loc[0, "최고"] if not daily.empty else None
-today_min = daily.loc[0, "최저"] if not daily.empty else None
+today_max = daily.loc[0, "최고"]
+today_min = daily.loc[0, "최저"]
 
 current_dt = pd.to_datetime(now["dt_txt"])
 day_name_en = current_dt.strftime("%a")
@@ -184,12 +184,12 @@ with col1:
 with col2:
     st.markdown(f"### **{int(t)}°**")
     st.write(f"**{desc}**")
-    if today_max is not None:
-        col3, col4, col5 = st.columns([0.4, 0.4, 1.2])
-        with col3:
-            st.markdown(f"**$\u2191$ {int(today_max)}°**")
-        with col4:
-            st.markdown(f"**$\u2193$ {int(today_min)}°**")
+    col3, col4, col5 = st.columns([0.4, 0.4, 1.2])
+    
+    with col3:
+        st.markdown(f"**$\u2191$ {int(today_max)}°**")
+    with col4:
+        st.markdown(f"**$\u2193$ {int(today_min)}°**")
     st.write(f"**체감온도 {int(fl)}°**")
     st.write(f"**{current_date_time}**")
 
@@ -261,6 +261,10 @@ if daily_labels_kr:
 unique_dates = sorted(df['dt'].dt.date.unique())
 daily_tick_points = [datetime.datetime.combine(d, datetime.time(12, 0)) for d in unique_dates]
 
+
+#-----------------
+
+
 st.subheader("이번주 온도")
 fig = go.Figure()
 fig.add_trace(go.Scatter(x=df["dt"], y=df["temp"], mode="lines+markers", name="온도"))
@@ -282,7 +286,6 @@ fig.update_layout(
 )
 st.plotly_chart(fig, use_container_width=True)
 
-
 st.info(weekly_summary(daily, air))
 
 
@@ -294,6 +297,7 @@ new_city = st.text_input("지역 입력", city)
 if st.button("조회"):
     load_weather(new_city)
 st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}))
+
 
 
 
