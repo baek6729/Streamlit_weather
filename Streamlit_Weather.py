@@ -138,7 +138,7 @@ lat, lon = data["lat"], data["lon"]
 st.header(city)
 
 
-#-----------------
+#-----------------값 업데이트
 
 
 df = pd.DataFrame(w["list"])
@@ -163,7 +163,6 @@ daily = df.groupby(df["dt"].dt.date).agg(
 
 daily["날짜"] = pd.to_datetime(daily["날짜"])
 
-# 요일 추가
 daily["요일"] = daily["날짜"].dt.strftime("%a").map(weeks)
 daily.loc[0, "요일"] = "오늘"
 
@@ -199,10 +198,7 @@ with col2:
     st.write(f"**{current_date_time}**")
 
 
-st.divider()
-
-
-#----------------- 오늘 시간별 날씨
+st.divider()#----------------- 오늘 시간별 날씨
 
 
 tlist = w["list"][:8]
@@ -220,10 +216,7 @@ for i, item in enumerate(tlist):
         st.caption(f"💧 {int(p)}%")
 
 
-st.divider()
-
-
-#----------------- 미세먼지
+st.divider()#----------------- 미세먼지
 
 
 st.subheader("미세먼지 농도")
@@ -236,12 +229,7 @@ st.write(f"AQI {em} | {txt}")
 st.write(f"PM2.5: {pm25:.1f}, PM10: {pm10:.1f}")
 
 
-st.divider()
-
-
-# ============================================================
-#           주간 예보 템플릿 함수 적용 (여기가 핵심 변경)
-# ============================================================
+st.divider()#-----------------주간 날씨 표 
 
 def render_daily_row(row):
     cols = st.columns([1, 1, 1, 1, 1])
@@ -251,8 +239,6 @@ def render_daily_row(row):
     cols[3].write(f"**{int(row['최고'])}°**")
     cols[4].write(f"{int(row['최저'])}°")
 
-
-# Header
 header_cols = st.columns([1, 1, 1, 1, 1])
 header_cols[0].markdown("##### **요일**")
 header_cols[1].markdown("##### **강수량**")
@@ -260,14 +246,12 @@ header_cols[2].markdown("##### **날씨**")
 header_cols[3].markdown("##### **최고온도**")
 header_cols[4].markdown("##### **최저온도**")
 
-# Rows
+
 for _, row in daily.iterrows():
     render_daily_row(row)
 
 
-st.divider()
-
-#----------------- 날짜 축 업데이트
+st.divider()#----------------- 날짜 축 업데이트
 
 
 unique_dates = sorted(df["dt"].dt.date.unique())
@@ -319,3 +303,4 @@ if st.button("조회"):
     load_weather(new_city)
 
 st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}))
+
