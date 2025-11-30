@@ -197,7 +197,9 @@ for i, item in enumerate(tlist):
         tt = pd.to_datetime(item["dt_txt"]).strftime("%H시")
         ti = item["main"]["temp"]
         p = item["pop"] * 100
-        ic = fix_icon(item["weather"]씨")
+        ic = fix_icon(item["weather"])
+
+st.subheader("주간 조언")
 fig = go.Figure()
 fig.add_trace(go.Scatter(x=df["dt"], y=df["temp"], mode="lines+markers", name="온도"))
 fig.add_trace(go.Scatter(x=df["dt"], y=df["feel"], mode="lines+markers", name="체감온도"))
@@ -232,5 +234,6 @@ if st.button("조회 다시"):
 # 지도
 st.subheader("위치 지도")
 st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}))
+
 
 
