@@ -5,7 +5,7 @@ import numpy as np
 import plotly.graph_objects as go
 import datetime
 
-API_KEY = "f2907b0b1e074198de1ba6fb1928665f"
+API_KEY = st.secrets["api_keys"]["openweathermap"]
 
 BASE_URL = "http://api.openweathermap.org/data/2.5/forecast"
 GEO_URL = "http://api.openweathermap.org/geo/1.0/direct"
@@ -303,6 +303,7 @@ if st.button("조회"):
     load_weather(new_city)
 
 st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}))
+
 
 
 
