@@ -204,14 +204,6 @@ fig.add_trace(go.Scatter(x=df["dt"], y=df["feel"], mode="lines+markers", name="�
 
 # Plotly 레이아웃 설정 (제목, X축 수평 표시, 간격 조정 적용)
 fig.update_layout(
-    title={
-        'text': "온도 변화", 
-        'x': 0.05, 
-        'xanchor': 'left',
-        'y': 0.95, 
-        'yanchor': 'top',
-        'font': {'size': 24}
-    },
     xaxis={
         'type': 'date', 
         'tickmode': 'array',
@@ -240,4 +232,5 @@ if st.button("조회 다시"):
 # 지도
 st.subheader("위치 지도")
 st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}))
+
 
