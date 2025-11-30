@@ -192,7 +192,10 @@ st.divider() # 현재 날씨와 시간별 예보 구분
 # --- 시간별 예보 (HTML 제거, 기본 위젯 사용) ---
 st.subheader("시간별 예보")
 tlist = w["list"][:8]
-cols = st.columns(len(tlist))
+# **********************************************
+# ********** 이 부분이 수정된 섹션입니다 **********
+# **********************************************
+cols = st.columns(len(tlist), gap="small") 
 
 for i, item in enumerate(tlist):
     with cols[i]:
@@ -201,18 +204,19 @@ for i, item in enumerate(tlist):
         p = item["pop"] * 100
         ic = fix_icon(item["weather"][0]["icon"])
         
-        # 1. 시간 (st.caption으로 작은 글씨)
-        st.caption(tt)
+        # 1. 시간 (가운데 정렬을 위해 Markdown 사용)
+        st.markdown(f"<p style='text-align: center; margin-bottom: 0px;'>{tt}</p>", unsafe_allow_html=True)
         
         # 2. 날씨 아이콘 (use_column_width="always"로 가운데 정렬 효과)
         st.image(f"http://openweathermap.org/img/wn/{ic}.png", width=50, use_column_width="always")
         
-        # 3. 온도 (st.write와 볼드 마크다운)
-        st.write(f"**{int(ti)}°**")
+        # 3. 온도 (가운데 정렬을 위해 Markdown 사용)
+        st.markdown(f"<p style='text-align: center; margin-top: 0px;'>**{int(ti)}°**</p>", unsafe_allow_html=True)
         
-        # 4. 강수량 (💧 이모지와 함께, st.caption으로 작은 글씨)
-        st.caption(f"💧 {int(p)}%")
+        # 4. 강수량 (가운데 정렬을 위해 Markdown 사용)
+        st.markdown(f"<p style='text-align: center;'>💧 {int(p)}%</p>", unsafe_allow_html=True)
 
+# **********************************************
 st.divider() # 시간별 예보와 대기질 구분
 
 
@@ -292,10 +296,10 @@ fig.update_layout(
         'tickmode': 'array',
         'tickvals': daily_tick_points, # 각 날짜의 정오를 라벨 위치로 사용
         'ticktext': daily_labels_kr,  
-        'tickangle': 0,               # 수평 표시
+        'tickangle': 0,             # 수평 표시
         'showgrid': True,
         'zeroline': False,
-        'rangeselector': None,        
+        'rangeselector': None,      
         'rangeslider': {'visible': False}
     },
     margin=dict(t=30)
