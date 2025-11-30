@@ -43,7 +43,7 @@ def normalize_icon_code(code):
         code = '03d'
     return code
 
-# --- 세션 상태 및 데이터 가져오기 함수 (생략) ---
+# --- 세션 상태 초기화 및 데이터 가져오기 함수 (생략) ---
 
 def initialize_session_state():
     if 'search_performed' not in st.session_state:
@@ -279,21 +279,42 @@ else:
         최고온도=('최고온도_raw', np.max),
         최저온도=('최저온도_raw', np.min),
         평균강수확률=('강수확률', np.mean),
-        
-        # 오전 (09시) 날씨 아이콘 추출
-        오전_아이콘=('날씨_아이콘', 
-                # df_full의 dt.time으로 필터링하기 위해 df_full['날짜/시간']을 사용하도록 수정
-                lambda x: x[df_full['날짜/시간'].dt.time.isin([datetime.time(9,0,0)])].mode().iloc[0] 
-                if not x[df_full['날짜/시간'].dt.time.isin([datetime.time(9,0,0)])].empty else 
-                x.mode().iloc[0]),
-        
-        # 오후 (15시) 날씨 아이콘 추출
-        오후_아이콘=('날씨_아이콘', 
-                lambda x: x[df_full['날짜/시간'].dt.time.isin([datetime.time(15,0,0)])].mode().iloc[0] 
-                if not x[df_full['날짜/시간'].dt.time.isin([datetime.time(15,0,0)])].empty else 
-                x.mode().iloc[0])
-        
     ).reset_index()
+
+    # ************************************************************
+    # 데이터 안정화를 위해 오전/오후 아이콘 추출 로직을 분리하여 적용
+    # ************************************************************
+    
+    # 오전/오후 아이콘 컬럼 추가
+    daily_summary['오전_아이콘'] = ''
+    daily_summary['오후_아이콘'] = ''
+    
+    for date in daily_summary['날짜/시간']:
+        # 해당 날짜의 데이터 필터링
+        day_data = df_full[df_full['날짜/시간'].dt.date == date]
+        
+        # 09시 아이콘 찾기 (오전 대표)
+        morning_icon = day_data[day_data['날짜/시간'].dt.time == datetime.time(9, 0, 0)]['날씨_아이콘']
+        if morning_icon.empty and not day_data['날씨_아이콘'].empty:
+            # 09시 데이터가 없으면, 그날의 가장 흔한 아이콘을 사용
+            morning_icon = day_data['날씨_아이콘'].mode()
+        
+        # 15시 아이콘 찾기 (오후 대표)
+        afternoon_icon = day_data[day_data['날짜/시간'].dt.time == datetime.time(15, 0, 0)]['날씨_아이콘']
+        if afternoon_icon.empty and not day_data['날씨_아이콘'].empty:
+            # 15시 데이터가 없으면, 그날의 가장 흔한 아이콘을 사용
+            afternoon_icon = day_data['날씨_아이콘'].mode()
+            
+        # 결과 반영 (mode()는 Series를 반환하므로 iloc[0] 사용)
+        idx = daily_summary[daily_summary['날짜/시간'] == date].index[0]
+        
+        if not morning_icon.empty:
+            daily_summary.loc[idx, '오전_아이콘'] = morning_icon.iloc[0]
+        
+        if not afternoon_icon.empty:
+            daily_summary.loc[idx, '오후_아이콘'] = afternoon_icon.iloc[0]
+
+    # ************************************************************
     
     KOREAN_WEEKDAYS_MAP = {0: '월', 1: '화', 2: '수', 3: '목', 4: '금', 5: '토', 6: '일'}
     today = datetime.datetime.now().date()
@@ -335,7 +356,7 @@ else:
         morning_icon = normalize_icon_code(row['오전_아이콘'])
         afternoon_icon = normalize_icon_code(row['오후_아이콘'])
         
-        # 데이터 행 (오류 수정: 모든 HTML을 하나의 f-string에 포함)
+        # 데이터 행 (HTML 노출 버그 수정 및 가운데 정렬/폰트 통일 유지)
         st.markdown(f"""
         <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; color: #333; font-size: 1.3em; text-align: center;">
             <div style="width: 15%; font-weight: bold; margin: auto;">{day_label}</div>
@@ -373,7 +394,7 @@ else:
     st.plotly_chart(fig, use_container_width=True)
     st.markdown("---")
 
-    # 6. 주간 날씨 분석 및 조언
+    # 6. 주간 날씨 분석 및 조언 (생략)
     st.markdown("### 💡 이번 주 날씨 조언")
     
     summary_text = get_weekly_summary_text(daily_summary, pollution_response)
