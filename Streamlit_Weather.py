@@ -160,8 +160,16 @@ daily = df.groupby(df["dt"].dt.date).agg(
     강수=("rainy", "mean")
 ).reset_index(drop=True)
 
-# 날짜 컬럼을 datetime 타입으로 맞추기
+
 daily["날짜"] = pd.to_datetime(daily["날짜"])
+
+# 요일 추가
+daily["요일"] = daily["날짜"].dt.strftime("%a").map(weeks)
+daily.loc[0, "요일"] = "오늘"
+
+
+#----------------- 현재 날씨
+
 
 now = w["list"][0]
 t = now["main"]["temp"]
@@ -174,11 +182,8 @@ today_min = daily.loc[0, "최저"]
 
 current_dt = pd.to_datetime(now["dt_txt"])
 day_name_en = current_dt.strftime("%a")
-day_name = weeks.get(day_name_en, day_name_en) 
+day_name = weeks.get(day_name_en, day_name_en)
 current_date_time = current_dt.strftime(f"%m/%d({day_name}), %H시")
-
-
-#----------------- 현재 날씨
 
 
 col1, col2 = st.columns([1,2])
@@ -194,8 +199,10 @@ with col2:
     st.write(f"**{current_date_time}**")
 
 
+st.divider()
 
-st.divider() #-----------------오늘 시간별 날씨
+
+#----------------- 오늘 시간별 날씨
 
 
 tlist = w["list"][:8]
@@ -203,18 +210,20 @@ cols = st.columns(len(tlist))
 
 for i, item in enumerate(tlist):
     with cols[i]:
-        with st.container():
-            tt = pd.to_datetime(item["dt_txt"]).strftime("%H시")
-            ti = item["main"]["temp"]
-            p = item["pop"] * 100
-            ic = fix_icon(item["weather"][0]["icon"])
-            st.caption(f"{tt}")
-            st.image(f"http://openweathermap.org/img/wn/{ic}.png", width=40)
-            st.markdown(f"**{int(ti)}°**")
-            st.caption(f"💧 {int(p)}%")
+        tt = pd.to_datetime(item["dt_txt"]).strftime("%H시")
+        ti = item["main"]["temp"]
+        p = item["pop"] * 100
+        ic = fix_icon(item["weather"][0]["icon"])
+        st.caption(f"{tt}")
+        st.image(f"http://openweathermap.org/img/wn/{ic}.png", width=40)
+        st.markdown(f"**{int(ti)}°**")
+        st.caption(f"💧 {int(p)}%")
 
 
-st.divider() #-----------------미세먼지
+st.divider()
+
+
+#----------------- 미세먼지
 
 
 st.subheader("미세먼지 농도")
@@ -227,29 +236,38 @@ st.write(f"AQI {em} | {txt}")
 st.write(f"PM2.5: {pm25:.1f}, PM10: {pm10:.1f}")
 
 
-st.divider() #-----------------이번주 날씨
+st.divider()
 
 
+# ============================================================
+#           주간 예보 템플릿 함수 적용 (여기가 핵심 변경)
+# ============================================================
+
+def render_daily_row(row):
+    cols = st.columns([1, 1, 1, 1, 1])
+    cols[0].write(row["요일"])
+    cols[1].write(f"{int(row['강수'])}%")
+    cols[2].image(f"http://openweathermap.org/img/wn/{fix_icon(row['대표'])}.png", width=35)
+    cols[3].write(f"**{int(row['최고'])}°**")
+    cols[4].write(f"{int(row['최저'])}°")
+
+
+# Header
 header_cols = st.columns([1, 1, 1, 1, 1])
-with header_cols[0]: st.markdown("##### **날짜**")
-with header_cols[1]: st.markdown("##### **강수량**")
-with header_cols[2]: st.markdown("##### **날씨**")
-with header_cols[3]: st.markdown("##### **최고온도**")
-with header_cols[4]: st.markdown("##### **최저온도**")
+header_cols[0].markdown("##### **요일**")
+header_cols[1].markdown("##### **강수량**")
+header_cols[2].markdown("##### **날씨**")
+header_cols[3].markdown("##### **최고온도**")
+header_cols[4].markdown("##### **최저온도**")
 
-daily["요일"] = daily["날짜"].dt.strftime("%a").map(weeks)
-daily.loc[0, "요일"] = "오늘"
-
+# Rows
 for _, row in daily.iterrows():
-    c1, c2, c3, c4, c5 = st.columns([1,1,1,1,1])
-    with c1: st.write(row["요일"])
-    with c2: st.write(f"💧 {int(row['강수'])}%")
-    with c3: st.image(f"http://openweathermap.org/img/wn/{fix_icon(row['대표'])}.png", width=40)
-    with c4: st.write(f"**{int(row['최고'])}°**")
-    with c5: st.write(f"{int(row['최저'])}°")
+    render_daily_row(row)
 
 
-st.divider() #-----------------날짜 업데이트
+st.divider()
+
+#----------------- 날짜 축 업데이트
 
 
 unique_dates = sorted(df["dt"].dt.date.unique())
@@ -277,10 +295,10 @@ fig.add_trace(go.Scatter(x=df["dt"], y=df["feel"], mode="lines+markers", name="�
 
 fig.update_layout(
     xaxis={
-        'type': 'date', 
+        'type': 'date',
         'tickmode': 'array',
         'tickvals': daily_tick_points,
-        'ticktext': daily_labels_kr, 
+        'ticktext': daily_labels_kr,
     },
     margin=dict(t=30)
 )
@@ -289,27 +307,15 @@ st.plotly_chart(fig, use_container_width=True)
 st.info(weekly_summary(daily, air))
 
 
-st.divider() #-----------------
+st.divider()
+
+
+#----------------- 다른 지역 조회
 
 
 st.subheader("다른 지역 조회")
 new_city = st.text_input("지역 입력", city)
 if st.button("조회"):
     load_weather(new_city)
+
 st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
