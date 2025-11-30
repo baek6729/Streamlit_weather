@@ -141,22 +141,23 @@ st.header(city)
 #-----------------
 
 
-df = pd.DataFrame([{
-    "dt": pd.to_datetime(x["dt_txt"]),
-    "temp": x["main"]["temp"],
-    "feel": x["main"]["feels_like"],
-    "최저_raw": x["main"]["temp_min"],
-    "최고_raw": x["main"]["temp_max"],
-    "icon": x["weather"][0]["icon"],
-    "강수": x["pop"] * 100
-} for x in w["list"]])
+df = pd.DataFrame(w["list"])
+df["dt"] = pd.to_datetime(df["dt_txt"])
+df["temp"] = df["main"].apply(lambda x: x["temp"])
+df["feel"] = df["main"].apply(lambda x: x["feels_like"])
+df["low_temp"] = df["main"].apply(lambda x: x["temp_min"])
+df["high_temp"] = df["main"].apply(lambda x: x["temp_max"])
+df["icon"] = df["weather"].apply(lambda x: x[0]["icon"])
+df["rainy"] = df["pop"] * 100
+df = df[["dt", "temp", "feel", "low_temp", "high_temp", "icon", "rainy"]]
+
 
 daily = df.groupby(df["dt"].dt.date).agg(
     날짜=("dt", "first"),
-    최고=("최고_raw", "max"),
-    최저=("최저_raw", "min"),
+    최고=("high_temp", "max"),
+    최저=("low_temp", "min"),
     대표=("icon", lambda x: x.mode()[0]),
-    강수=("강수", "mean")
+    강수=("rainy", "mean")
 ).reset_index(drop=True)
 
 # 날짜 컬럼을 datetime 타입으로 맞추기
@@ -301,6 +302,7 @@ new_city = st.text_input("지역 입력", city)
 if st.button("조회"):
     load_weather(new_city)
 st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}))
+
 
 
 
