@@ -196,55 +196,23 @@ with col2:
     st.write(f"**{current_date_time}**")
 
 
-st.divider() #-----------------
+st.divider() #-----------------오늘 시간별 날씨
 
-# === 시간별 8개 데이터 ===
+
 tlist = w["list"][:8]
-
 cols = st.columns(len(tlist))
 
-for i, col in enumerate(cols):
-    item = tlist[i]
-
-    # 시간
-    hour = pd.to_datetime(item["dt_txt"]).strftime("%H시")
-
-    # 날씨 아이콘
-    icon_code = fix_icon(item["weather"][0]["icon"])
-    icon_url = f"http://openweathermap.org/img/wn/{icon_code}.png"
-
-    # 기온
-    temp = int(item["main"]["temp"])
-
-    # 강수 확률
-    pop = int(item["pop"] * 100)
-
-    with col:
-        # 1) 시각
-        st.markdown(f"### {hour}")
-
-        # 2) 위·아래 padding
-        st.write("")
-        st.write("")
-
-        # 3) 아이콘
-        st.image(icon_url, width=40)
-
-        # 4) 아이콘 아래 padding
-        st.write("")
-
-        # 5) 기온
-        st.markdown(f"**{temp}°**")
-
-        # 6) 기온 아래 padding
-        st.write("")
-
-        # 7) 강수확률
-        st.markdown(f"{pop}%")
-
-        # 8) 마지막 padding
-        st.write("")
-
+for i, item in enumerate(tlist):
+    with cols[i]:
+        with st.container():
+            tt = pd.to_datetime(item["dt_txt"]).strftime("%H시")
+            ti = item["main"]["temp"]
+            p = item["pop"] * 100
+            ic = fix_icon(item["weather"][0]["icon"])
+            st.caption(f"{tt}")
+            st.image(f"http://openweathermap.org/img/wn/{ic}.png", width=40)
+            st.markdown(f"**{int(ti)}°**")
+            st.caption(f"💧 {int(p)}%")
 
 
 st.divider() #-----------------
@@ -336,6 +304,7 @@ new_city = st.text_input("지역 입력", city)
 if st.button("조회"):
     load_weather(new_city)
 st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}))
+
 
 
 
