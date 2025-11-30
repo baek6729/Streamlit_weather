@@ -133,7 +133,6 @@ tlist = w["list"][:8]
 tmin = min(x["main"]["temp_min"] for x in tlist)
 tmax = max(x["main"]["temp_max"] for x in tlist)
 
-# 👇 구문 오류 수정: 쉼표(,) 제거 (line 143)
 st.markdown(
     f"""
     <div style="display:flex;align-items:center;gap:10px;">
@@ -187,8 +186,11 @@ else:
     st.write("대기질 정보 없음.")
 st.divider()
 
-# 주간 예보 (테이블 적용)
-st.subheader("주간 날씨 예보") 
+# -------------------------------------------------------
+# 👇👇👇 주간 예보 수정된 부분 (이전 코드 대체) 👇👇👇
+# -------------------------------------------------------
+
+st.subheader("주간 날씨 예보") # 제목 수정
 
 df = pd.DataFrame([
     {
@@ -204,75 +206,60 @@ df = pd.DataFrame([
 ])
 
 daily = df.groupby(df["dt"].dt.date).agg(
-    날짜=("dt", "first"), 
+    날짜=("dt", "first"), # 첫 번째 dt 값을 날짜 열로 사용
     최고=("최고_raw", "max"),
     최저=("최저_raw", "min"),
     대표=("icon", lambda x: x.mode()[0]),
     강수=("강수", "mean")
 ).reset_index(drop=True)
 
-daily['최고'] = daily['최고'].fillna(0)
-daily['최저'] = daily['최저'].fillna(0)
 
+# 표시할 데이터프레임 생성
+# 1. 요일 및 날짜 포맷팅
 daily["요일"] = daily["날짜"].dt.strftime("%a").replace({
     "Mon": "월", "Tue": "화", "Wed": "수", 
     "Thu": "목", "Fri": "금", "Sat": "토", "Sun": "일"
 })
-daily["요일"] = np.where(daily.index == 0, "오늘", daily["요일"]) 
+daily["요일"] = np.where(daily.index == 0, "오늘", daily["요일"]) # 첫 행은 '오늘'로 표시
 
+# 2. 강수확률 포맷팅 (소수점 제거 및 %)
 daily["강수확률"] = daily["강수"].apply(lambda x: f"💧 {x:.0f}%")
 
+# 3. 날씨 아이콘 URL 생성 및 HTML 적용 (이미지 중앙 정렬을 위해 HTML 사용)
 daily["날씨"] = daily["대표"].apply(lambda x: fix_icon(x))
 daily["날씨"] = daily["날씨"].apply(
     lambda x: f'<div style="text-align:center;"><img src="http://openweathermap.org/img/wn/{x}.png" width="40"></div>'
 )
 
-daily["최고 온도"] = daily["최고"].apply(lambda x: f"**{int(x)}°**") 
+# 4. 온도 포맷팅 (소수점 제거 및 °)
+daily["최고 온도"] = daily["최고"].apply(lambda x: f"**{int(x)}°**") # 최고 온도 강조
 daily["최저 온도"] = daily["최저"].apply(lambda x: f"{int(x)}°")
 
 
+# 최종적으로 표에 보여줄 열만 선택 (열 순서 조정)
 weekly_table = daily[["요일", "강수확률", "날씨", "최고 온도", "최저 온도"]]
 
-html_table = weekly_table.to_html(escape=False, index=False, classes='daily-weather-table')
+# 표 출력 (escape=False로 HTML 렌더링 허용, index=False로 행 번호 숨기기)
 st.markdown(
-    f"<div style='width:100%;'>{html_table}</div>",
+    weekly_table.to_html(escape=False, index=False, classes='daily-weather-table'), 
     unsafe_allow_html=True
 )
 
-st.write("---") 
+st.write("---") # 주간 예보 목록을 대체하는 부분 종료
 
 # -------------------------------------------------------
-# 👇👇👇 그래프 수정된 부분 (가로축 한국어 적용) 👇👇👇
+# 👆👆👆 주간 예보 수정된 부분 (이전 코드 대체) 👆👆👆
 # -------------------------------------------------------
 
+# 그래프 (변경 없음)
 st.subheader("온도 변화")
-
-# 한국어 요일/시간 포맷으로 x축 레이블 생성
-# Pandas datetime 객체를 한국어 요일이 포함된 문자열로 변환하고 요일을 치환
-korean_dates = df['dt'].dt.strftime('%m/%d (%a) %H시').str.replace('Mon', '월').str.replace('Tue', '화').str.replace('Wed', '수').str.replace('Thu', '목').str.replace('Fri', '금').str.replace('Sat', '토').str.replace('Sun', '일')
-
 fig = go.Figure()
-
-# x축에 변환된 한국어 문자열 사용
-fig.add_trace(go.Scatter(x=korean_dates, y=df["temp"], mode="lines+markers", name="온도"))
+fig.add_trace(go.Scatter(x=df["dt"], y=df["temp"], mode="lines+markers", name="온도"))
 fig.add_trace(go.Scatter(x=df["dt"], y=df["feel"], mode="lines+markers", name="체감온도"))
-
-# 가로축(x축) 레이아웃 설정
-fig.update_xaxes(
-    title_text="시간 및 날짜",
-    tickfont=dict(size=10), # 레이블이 길어 겹치는 것을 방지하기 위해 글꼴 크기 줄임
-    tickangle=-45 # 레이블을 45도 회전
-)
-
-# 세로축(y축) 설정
-fig.update_yaxes(
-    title_text="온도 (°C)",
-)
-
 st.plotly_chart(fig, use_container_width=True)
 
 st.subheader("주간 조언")
-st.info(weekly_summary(daily, air))
+st.info(weekly_summary(daily, air)) # daily DataFrame은 위에서 이미 계산됨
 
 st.subheader("다른 지역 조회")
 new_city = st.text_input("지역 입력", city)
