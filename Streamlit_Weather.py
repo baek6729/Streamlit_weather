@@ -14,7 +14,7 @@ AIR_URL = "http://api.openweathermap.org/data/2.5/air_pollution"
 
 #-----------------
 
-W_DESC = {
+weather_kr = {
     "clear sky": "맑음", "few clouds": "조금 구름",
     "scattered clouds": "구름 많음", "broken clouds": "흐림",
     "overcast clouds": "흐림", "light rain": "약한 비",
@@ -23,7 +23,7 @@ W_DESC = {
     "mist": "안개", "fog": "짙은 안개", "thunderstorm": "천둥"
 }
 
-AQI_TEXT = {
+aqi_now = {
     1: ("좋음", "🟢"), 2: ("보통", "🟡"), 3: ("나쁨", "🟠"),
     4: ("매우 나쁨", "🔴"), 5: ("최악", "⚫")
 }
@@ -109,7 +109,7 @@ def weekly_summary(df, air):
     if air and "list" in air:
         aqi = air["list"][0]["main"]["aqi"]
         if aqi >= 3:
-            txt, _ = AQI_TEXT.get(aqi)
+            txt, _ = aqi_now.get(aqi)
             msg.append(f"미세먼지 농도가 {txt} 수준입니다. 마스크 착용을 권장합니다.")
 
     return "\n\n".join(msg)
@@ -165,7 +165,7 @@ daily["날짜"] = pd.to_datetime(daily["날짜"])
 now = w["list"][0]
 t = now["main"]["temp"]
 fl = now["main"]["feels_like"]
-desc = W_DESC.get(now["weather"][0]["description"], "")
+desc = weather_kr.get(now["weather"][0]["description"], "")
 icon = fix_icon(now["weather"][0]["icon"])
 
 today_max = daily.loc[0, "최고"]
@@ -219,7 +219,7 @@ st.divider() #-----------------미세먼지
 st.subheader("미세먼지 농도")
 info = air["list"][0]
 aqi = info["main"]["aqi"]
-txt, em = AQI_TEXT.get(aqi, ("?", ""))
+txt, em = aqi_now.get(aqi, ("?", ""))
 pm25 = info["components"].get("pm2_5", 0)
 pm10 = info["components"].get("pm10", 0)
 st.write(f"AQI {em} | {txt}")
@@ -300,6 +300,7 @@ new_city = st.text_input("지역 입력", city)
 if st.button("조회"):
     load_weather(new_city)
 st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}))
+
 
 
 
