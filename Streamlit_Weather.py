@@ -177,13 +177,13 @@ day_name = weeks.get(day_name_en, day_name_en)
 current_date_time = current_dt.strftime(f"%m/%d({day_name}), %H시")
 
 
-#----------------- 현재 날씨씨
+#----------------- 현재 날씨
 
 
 col1, col2 = st.columns([1,2])
 with col1:
     st.image(f"http://openweathermap.org/img/wn/{icon}@2x.png", width=100)
-    st.write(f"**{desc}**")
+    st.write(f"  **{desc}**")
 with col2:
     st.markdown(f"### **{int(t)}°**")
     col3, col4 = st.columns([1, 1])
@@ -300,6 +300,7 @@ new_city = st.text_input("지역 입력", city)
 if st.button("조회"):
     load_weather(new_city)
 st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}))
+
 
 
 
