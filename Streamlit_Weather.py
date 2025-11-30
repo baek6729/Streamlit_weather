@@ -27,7 +27,7 @@ AQI_TEXT = {
 }
 
 # 요일 치환 딕셔너리
-weekday_map = {
+weeks = {
     "Mon": "월", "Tue": "화", "Wed": "수", "Thu": "목", 
     "Fri": "금", "Sat": "토", "Sun": "일"
 }
@@ -157,7 +157,7 @@ today_min = daily.loc[0, "최저"] if not daily.empty else None
 # 현재 날짜 및 시간 포맷팅
 current_dt = pd.to_datetime(now["dt_txt"])
 day_name_en = current_dt.strftime("%a")
-day_name = weekday_map.get(day_name_en, day_name_en) 
+day_name = weeks.get(day_name_en, day_name_en) 
 current_date_time = current_dt.strftime(f"%m/%d({day_name}), %H시")
 
 
@@ -254,7 +254,7 @@ with header_cols[3]: st.markdown("##### **최고온도**")
 with header_cols[4]: st.markdown("##### **최저온도**")
 
 # daily DataFrame의 요일 처리
-daily["요일"] = daily["날짜"].dt.strftime("%a").map(weekday_map).fillna(daily["날짜"].dt.strftime("%a"))
+daily["요일"] = daily["날짜"].dt.strftime("%a").map(weeks).fillna(daily["날짜"].dt.strftime("%a"))
 daily["요일"] = np.where(daily.index==0, "오늘", daily["요일"])
 
 # Streamlit을 사용해서 주간 예보 표시
@@ -273,7 +273,7 @@ st.divider() # 주간 예보와 그래프 구분
 # X축 라벨을 위한 데이터 준비
 daily_start = df.groupby(df['dt'].dt.date)['dt'].min().tolist()
 daily_labels_en = [pd.to_datetime(dt).strftime('%a') for dt in daily_start]
-daily_labels_kr = [weekday_map.get(d, d) for d in daily_labels_en]
+daily_labels_kr = [weeks.get(d, d) for d in daily_labels_en]
 if daily_labels_kr:
     daily_labels_kr[0] = '오늘'
 
@@ -333,4 +333,5 @@ st.divider() # 다른 지역 조회와 지도 구분
 # --- 지도 ---
 st.subheader("위치 지도")
 st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}))
+
 
