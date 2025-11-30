@@ -11,7 +11,7 @@ BASE_URL = "http://api.openweathermap.org/data/2.5/forecast"
 GEO_URL = "http://api.openweathermap.org/geo/1.0/direct"
 AIR_POLLUTION_URL = "http://api.openweathermap.org/data/2.5/air_pollution"
 
-# --- 날씨 및 상태 정의 (생략) ---
+# --- 날씨 및 상태 정의 ---
 WEATHER_TRANSLATION = {
     "clear sky": "맑음", "few clouds": "구름 조금", "scattered clouds": "구름 많음",
     "broken clouds": "구름 낌", "overcast clouds": "흐림", "light rain": "약한 비",
@@ -36,7 +36,7 @@ def contains_hangul(text):
 
 # --- 공통 함수: 아이콘 통일 로직 ---
 def normalize_icon_code(code):
-    """밤 아이콘을 낮으로 통일하고, 짙은 구름을 일반 구름으로 대체"""
+    """밤 아이콘을 낮 아이콘으로 통일하고, 짙은 구름을 일반 구름으로 대체"""
     if code.endswith('n'):
         code = code[:-1] + 'd'
     if code == '04d':
@@ -179,9 +179,11 @@ else:
     
     current_weather = data['list'][0]
     current_temp = current_weather['main']['temp']
+    
     forecast_list_24hr = data['list'][:8] 
     min_temp = min(item['main']['temp_min'] for item in forecast_list_24hr)
     max_temp = max(item['main']['temp_max'] for item in forecast_list_24hr)
+    
     feels_like = current_weather['main']['feels_like']
     current_desc_en = current_weather['weather'][0]['description']
     current_desc_kr = WEATHER_TRANSLATION.get(current_desc_en, current_desc_en)
@@ -204,14 +206,12 @@ else:
     st.markdown("---")
     
     # 2. 미세먼지 정보 (생략)
-    # ... (미세먼지 섹션은 중앙 정렬 및 폰트 크기 변경이 어렵고, 현재 UI 유지) ...
     st.markdown("### 💨 현재 대기 질 정보")
     if pollution_response and 'list' in pollution_response:
         current_air = pollution_response['list'][0]
         aqi = current_air['main']['aqi']
         aqi_status_kr, aqi_emoji = AQI_STATUS.get(aqi, ("알 수 없음", "❓"))
         components = current_air['components']
-        # 폰트 크기 증가 및 색상 통일 (중앙 정렬은 생략)
         st.markdown(f"""
         <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; color: #333; font-size: 1.1em;">
             <div style="text-align: center; width: 33%;">
@@ -282,6 +282,7 @@ else:
         
         # 오전 (09시) 날씨 아이콘 추출
         오전_아이콘=('날씨_아이콘', 
+                # df_full의 dt.time으로 필터링하기 위해 df_full['날짜/시간']을 사용하도록 수정
                 lambda x: x[df_full['날짜/시간'].dt.time.isin([datetime.time(9,0,0)])].mode().iloc[0] 
                 if not x[df_full['날짜/시간'].dt.time.isin([datetime.time(9,0,0)])].empty else 
                 x.mode().iloc[0]),
@@ -302,7 +303,7 @@ else:
                                     '내일' if x == today + datetime.timedelta(days=1) else 
                                     KOREAN_WEEKDAYS_MAP[x.weekday()])
 
-    # --- 주간 날씨 테이블 헤더 추가 (오전/오후 분할 적용 및 가운데 정렬) ---
+    # --- 주간 날씨 테이블 헤더 추가 ---
     st.markdown(f"""
     <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #ddd; margin-bottom: 5px; font-weight: bold; color: #333; font-size: 1.2em; text-align: center;">
         <div style="width: 15%; margin: auto;">요일</div>
@@ -334,7 +335,7 @@ else:
         morning_icon = normalize_icon_code(row['오전_아이콘'])
         afternoon_icon = normalize_icon_code(row['오후_아이콘'])
         
-        # 데이터 행 (가운데 정렬 및 폰트 크기, 색상 통일)
+        # 데이터 행 (오류 수정: 모든 HTML을 하나의 f-string에 포함)
         st.markdown(f"""
         <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; color: #333; font-size: 1.3em; text-align: center;">
             <div style="width: 15%; font-weight: bold; margin: auto;">{day_label}</div>
@@ -372,15 +373,18 @@ else:
     st.plotly_chart(fig, use_container_width=True)
     st.markdown("---")
 
-    # 6. 주간 날씨 분석 및 조언 (생략)
+    # 6. 주간 날씨 분석 및 조언
     st.markdown("### 💡 이번 주 날씨 조언")
+    
     summary_text = get_weekly_summary_text(daily_summary, pollution_response)
+    
     st.info(summary_text)
     st.markdown("---")
         
     # 7. 현재 위치 지도 (생략)
     lat = st.session_state.city_data['lat']
     lon = st.session_state.city_data['lon']
+    
     st.markdown("### 🗺️ 현재 위치 지도")
     map_data = pd.DataFrame({'lat': [lat], 'lon': [lon]})
     st.map(map_data, zoom=10)
@@ -389,6 +393,7 @@ else:
 
     # 8. 다른 지역 검색 (생략)
     st.markdown("### 📍 다른 지역 검색")
+    
     new_city_name_input = st.text_input("새로운 지명 입력", display_city_name, key="new_city_input")
     if st.button("날씨 정보 다시 가져오기"):
         if new_city_name_input:
