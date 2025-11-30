@@ -115,13 +115,13 @@ def weekly_summary(df, air):
     return "\n\n".join(msg)
 
 
-#-----------------
+#-----------------검색
 
 
 init_state()
 
 st.title("오늘의 날씨는")
-st.divider() #-----------------
+st.divider()
 
 if not st.session_state.searched:
     city_in = st.text_input("지역 입력", "서울")
@@ -183,7 +183,7 @@ current_date_time = current_dt.strftime(f"%m/%d({day_name}), %H시")
 col1, col2 = st.columns([1,2])
 with col1:
     st.image(f"http://openweathermap.org/img/wn/{icon}@2x.png", width=100)
-    st.write(f"  **{desc}**")
+    st.write(f"&nbsp;&nbsp;**{desc}**")
 with col2:
     st.markdown(f"### **{int(t)}°**")
     col3, col4 = st.columns([1, 1])
@@ -300,6 +300,7 @@ new_city = st.text_input("지역 입력", city)
 if st.button("조회"):
     load_weather(new_city)
 st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}))
+
 
 
 
