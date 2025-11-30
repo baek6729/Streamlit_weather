@@ -133,6 +133,151 @@ tlist = w["list"][:8]
 tmin = min(x["main"]["temp_min"] for x in tlist)
 tmax = max(x["main"]["temp_max"] for x in tlist)
 
+# 👇 구문 오류 수정: 쉼표(,) 제거 (line 143)
 st.markdown(
     f"""
     <div style="display:flex;align-items:center;gap:10px;">
+        <h1 style="margin:0">{int(t)}°</h1>
+        <img src="http://openweathermap.org/img/wn/{icon}@2x.png" width="70">
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+st.write(desc)
+st.write(f"최고 {tmax:.0f}° / 최저 {tmin:.0f}°")
+st.write(f"체감온도 {fl:.0f}°")
+st.divider()
+
+# 시간별 예보 (변경 없음)
+st.subheader("시간별 예보")
+cols = st.columns(len(tlist))
+
+for i, item in enumerate(tlist):
+    with cols[i]:
+        tt = pd.to_datetime(item["dt_txt"]).strftime("%H시")
+        ti = item["main"]["temp"]
+        p = item["pop"] * 100
+        ic = fix_icon(item["weather"][0]["icon"])
+        st.markdown(
+            f"""
+            <div style="text-align:center;">
+                <b>{tt}</b><br>
+                <img src="http://openweathermap.org/img/wn/{ic}.png" width="40"><br>
+                {ti:.0f}°<br>
+                💧 {p:.0f}%
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+st.divider()
+
+# 미세먼지 (변경 없음)
+st.subheader("대기질")
+if air and "list" in air:
+    info = air["list"][0]
+    aqi = info["main"]["aqi"]
+    txt, em = AQI_TEXT.get(aqi, ("?", ""))
+    pm25 = info["components"].get("pm2_5", 0)
+    pm10 = info["components"].get("pm10", 0)
+
+    st.write(f"AQI {em} | {txt}")
+    st.write(f"PM2.5: {pm25:.1f},  PM10: {pm10:.1f}")
+else:
+    st.write("대기질 정보 없음.")
+st.divider()
+
+# 주간 예보 (테이블 적용)
+st.subheader("주간 날씨 예보") 
+
+df = pd.DataFrame([
+    {
+        "dt": pd.to_datetime(x["dt_txt"]),
+        "temp": x["main"]["temp"],
+        "feel": x["main"]["feels_like"],
+        "최저_raw": x["main"]["temp_min"],
+        "최고_raw": x["main"]["temp_max"],
+        "icon": x["weather"][0]["icon"],
+        "강수": x["pop"] * 100
+    }
+    for x in w["list"]
+])
+
+daily = df.groupby(df["dt"].dt.date).agg(
+    날짜=("dt", "first"), 
+    최고=("최고_raw", "max"),
+    최저=("최저_raw", "min"),
+    대표=("icon", lambda x: x.mode()[0]),
+    강수=("강수", "mean")
+).reset_index(drop=True)
+
+daily['최고'] = daily['최고'].fillna(0)
+daily['최저'] = daily['최저'].fillna(0)
+
+daily["요일"] = daily["날짜"].dt.strftime("%a").replace({
+    "Mon": "월", "Tue": "화", "Wed": "수", 
+    "Thu": "목", "Fri": "금", "Sat": "토", "Sun": "일"
+})
+daily["요일"] = np.where(daily.index == 0, "오늘", daily["요일"]) 
+
+daily["강수확률"] = daily["강수"].apply(lambda x: f"💧 {x:.0f}%")
+
+daily["날씨"] = daily["대표"].apply(lambda x: fix_icon(x))
+daily["날씨"] = daily["날씨"].apply(
+    lambda x: f'<div style="text-align:center;"><img src="http://openweathermap.org/img/wn/{x}.png" width="40"></div>'
+)
+
+daily["최고 온도"] = daily["최고"].apply(lambda x: f"**{int(x)}°**") 
+daily["최저 온도"] = daily["최저"].apply(lambda x: f"{int(x)}°")
+
+
+weekly_table = daily[["요일", "강수확률", "날씨", "최고 온도", "최저 온도"]]
+
+html_table = weekly_table.to_html(escape=False, index=False, classes='daily-weather-table')
+st.markdown(
+    f"<div style='width:100%;'>{html_table}</div>",
+    unsafe_allow_html=True
+)
+
+st.write("---") 
+
+# -------------------------------------------------------
+# 👇👇👇 그래프 수정된 부분 (가로축 한국어 적용) 👇👇👇
+# -------------------------------------------------------
+
+st.subheader("온도 변화")
+
+# 한국어 요일/시간 포맷으로 x축 레이블 생성
+# Pandas datetime 객체를 한국어 요일이 포함된 문자열로 변환하고 요일을 치환
+korean_dates = df['dt'].dt.strftime('%m/%d (%a) %H시').str.replace('Mon', '월').str.replace('Tue', '화').str.replace('Wed', '수').str.replace('Thu', '목').str.replace('Fri', '금').str.replace('Sat', '토').str.replace('Sun', '일')
+
+fig = go.Figure()
+
+# x축에 변환된 한국어 문자열 사용
+fig.add_trace(go.Scatter(x=korean_dates, y=df["temp"], mode="lines+markers", name="온도"))
+fig.add_trace(go.Scatter(x=df["dt"], y=df["feel"], mode="lines+markers", name="체감온도"))
+
+# 가로축(x축) 레이아웃 설정
+fig.update_xaxes(
+    title_text="시간 및 날짜",
+    tickfont=dict(size=10), # 레이블이 길어 겹치는 것을 방지하기 위해 글꼴 크기 줄임
+    tickangle=-45 # 레이블을 45도 회전
+)
+
+# 세로축(y축) 설정
+fig.update_yaxes(
+    title_text="온도 (°C)",
+)
+
+st.plotly_chart(fig, use_container_width=True)
+
+st.subheader("주간 조언")
+st.info(weekly_summary(daily, air))
+
+st.subheader("다른 지역 조회")
+new_city = st.text_input("지역 입력", city)
+if st.button("조회 다시"):
+    load_weather(new_city)
+
+st.subheader("위치 지도")
+st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}))
