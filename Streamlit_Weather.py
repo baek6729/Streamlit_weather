@@ -74,7 +74,6 @@ def load_weather(city):
 
 
 def weekly_summary(df, air):
-    # df는 daily DataFrame이며, '최고', '최저' 열이 있어야 합니다.
     avg_max = df["최고"].mean()
     msg = []
 
@@ -92,7 +91,6 @@ def weekly_summary(df, air):
     if d >= 10:
         msg.append(f"평균 일교차가 {d:.1f}°C로 큽니다.")
 
-    # '강수' 열이 있어야 합니다.
     rain_days = (df["강수"] >= 50).sum()
     if rain_days >= len(df) / 2:
         msg.append("비 소식이 많은 주간입니다. 우산을 챙기세요.")
@@ -138,139 +136,3 @@ tmax = max(x["main"]["temp_max"] for x in tlist)
 st.markdown(
     f"""
     <div style="display:flex;align-items:center;gap:10px;">
-        <h1 style="margin:0">{int(t)}°</h1>
-        <img src="http://openweathermap.org/img/wn/{icon}@2x.png" width="70">
-    </div>
-    """,
-    unsafe_allow_html=True
-)
-
-st.write(desc)
-st.write(f"최고 {tmax:.0f}° / 최저 {tmin:.0f}°")
-st.write(f"체감온도 {fl:.0f}°")
-st.divider()
-
-# 시간별 예보 (변경 없음)
-st.subheader("시간별 예보")
-cols = st.columns(len(tlist))
-
-for i, item in enumerate(tlist):
-    with cols[i]:
-        tt = pd.to_datetime(item["dt_txt"]).strftime("%H시")
-        ti = item["main"]["temp"]
-        p = item["pop"] * 100
-        ic = fix_icon(item["weather"][0]["icon"])
-        st.markdown(
-            f"""
-            <div style="text-align:center;">
-                <b>{tt}</b><br>
-                <img src="http://openweathermap.org/img/wn/{ic}.png" width="40"><br>
-                {ti:.0f}°<br>
-                💧 {p:.0f}%
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-st.divider()
-
-# 미세먼지 (변경 없음)
-st.subheader("대기질")
-if air and "list" in air:
-    info = air["list"][0]
-    aqi = info["main"]["aqi"]
-    txt, em = AQI_TEXT.get(aqi, ("?", ""))
-    pm25 = info["components"].get("pm2_5", 0)
-    pm10 = info["components"].get("pm10", 0)
-
-    st.write(f"AQI {em} | {txt}")
-    st.write(f"PM2.5: {pm25:.1f},  PM10: {pm10:.1f}")
-else:
-    st.write("대기질 정보 없음.")
-st.divider()
-
-# -------------------------------------------------------
-# 👇👇👇 주간 예보 수정된 부분 (테이블 + 오류 방지 적용) 👇👇👇
-# -------------------------------------------------------
-
-st.subheader("주간 날씨 예보") # 제목 수정
-
-# 3시간 단위 예보 데이터를 DataFrame으로 변환
-df = pd.DataFrame([
-    {
-        "dt": pd.to_datetime(x["dt_txt"]),
-        "temp": x["main"]["temp"],
-        "feel": x["main"]["feels_like"],
-        "최저_raw": x["main"]["temp_min"],
-        "최고_raw": x["main"]["temp_max"],
-        "icon": x["weather"][0]["icon"],
-        "강수": x["pop"] * 100
-    }
-    for x in w["list"]
-])
-
-# 일별 최고/최저 기온, 대표 아이콘, 평균 강수확률 집계
-daily = df.groupby(df["dt"].dt.date).agg(
-    날짜=("dt", "first"), 
-    최고=("최고_raw", "max"),
-    최저=("최저_raw", "min"),
-    대표=("icon", lambda x: x.mode()[0]),
-    강수=("강수", "mean")
-).reset_index(drop=True)
-
-
-# **[오류 방지 코드]** Int 변환 전 NaN 값을 0으로 채우기 (TypeError 방지)
-daily['최고'] = daily['최고'].fillna(0)
-daily['최저'] = daily['최저'].fillna(0)
-
-
-# 표시할 데이터프레임의 열 포맷팅 및 생성
-daily["요일"] = daily["날짜"].dt.strftime("%a").replace({
-    "Mon": "월", "Tue": "화", "Wed": "수", 
-    "Thu": "목", "Fri": "금", "Sat": "토", "Sun": "일"
-})
-daily["요일"] = np.where(daily.index == 0, "오늘", daily["요일"]) 
-
-daily["강수확률"] = daily["강수"].apply(lambda x: f"💧 {x:.0f}%")
-
-# 날씨 아이콘 HTML 생성 (fix_icon 적용)
-daily["날씨"] = daily["대표"].apply(lambda x: fix_icon(x))
-daily["날씨"] = daily["날씨"].apply(
-    lambda x: f'<div style="text-align:center;"><img src="http://openweathermap.org/img/wn/{x}.png" width="40"></div>'
-)
-
-# 온도 포맷팅
-daily["최고 온도"] = daily["최고"].apply(lambda x: f"**{int(x)}°**") 
-daily["최저 온도"] = daily["최저"].apply(lambda x: f"{int(x)}°")
-
-
-weekly_table = daily[["요일", "강수확률", "날씨", "최고 온도", "최저 온도"]]
-
-# 표 출력: to_html()에 style='width:100%'를 추가하여 표 너비를 확장합니다.
-st.markdown(
-    weekly_table.to_html(escape=False, index=False, classes='daily-weather-table', style='width:100%'), 
-    unsafe_allow_html=True
-)
-
-st.write("---") 
-
-# -------------------------------------------------------
-# 👆👆👆 주간 예보 수정된 부분 (테이블 + 오류 방지 적용) 👆👆👆
-# -------------------------------------------------------
-
-# 그래프 (변경 없음)
-st.subheader("온도 변화")
-fig = go.Figure()
-fig.add_trace(go.Scatter(x=df["dt"], y=df["temp"], mode="lines+markers", name="온도"))
-fig.add_trace(go.Scatter(x=df["dt"], y=df["feel"], mode="lines+markers", name="체감온도"))
-st.plotly_chart(fig, use_container_width=True)
-
-st.subheader("주간 조언")
-st.info(weekly_summary(daily, air))
-
-st.subheader("다른 지역 조회")
-new_city = st.text_input("지역 입력", city)
-if st.button("조회 다시"):
-    load_weather(new_city)
-
-st.subheader("위치 지도")
-st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}))
