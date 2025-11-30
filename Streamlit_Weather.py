@@ -26,7 +26,7 @@ AQI_TEXT = {
     4: ("매우 나쁨", "🔴"), 5: ("최악", "⚫")
 }
 
-# 요일 치환 딕셔너리 (TypeError 해결을 위해 별도 정의)
+# 요일 치환 딕셔너리
 weekday_map = {
     "Mon": "월", "Tue": "화", "Wed": "수", "Thu": "목", 
     "Fri": "금", "Sat": "토", "Sun": "일"
@@ -73,7 +73,7 @@ def load_weather(city):
 
     ss.data = {"name": name_kr, "lat": lat, "lon": lon, "w": w, "air": air}
     ss.searched = True
-    # st.experimental_rerun() -> st.rerun()으로 수정 (AttributeError 해결)
+    # st.experimental_rerun() -> st.rerun()으로 수정
     st.rerun()
 
 def weekly_summary(df, air):
@@ -155,14 +155,14 @@ icon = fix_icon(now["weather"][0]["icon"])
 today_max = daily.loc[0, "최고"] if not daily.empty else None
 today_min = daily.loc[0, "최저"] if not daily.empty else None
 
-# 현재 날짜 및 시간 포맷팅 (TypeError 해결 로직 적용)
+# 현재 날짜 및 시간 포맷팅 (요일 변환 오류 수정 적용)
 current_dt = pd.to_datetime(now["dt_txt"])
 day_name_en = current_dt.strftime("%a")
 day_name = weekday_map.get(day_name_en, day_name_en) 
 current_date_time = current_dt.strftime(f"%m/%d({day_name}), %H시")
 
 
-# --- 현재 날씨 표시 (요청 형식 반영) ---
+# --- 현재 날씨 표시 ---
 col1, col2 = st.columns([1,2])
 with col1:
     st.image(f"http://openweathermap.org/img/wn/{icon}@2x.png", width=100)
@@ -173,7 +173,7 @@ with col2:
     # 2. 날씨 설명
     st.write(f"**{desc}**")
     
-    # 3. 최대/최소 온도
+    # 3. 최대/최저 온도
     if today_max is not None:
         col3, col4, col5 = st.columns([0.4, 0.4, 1.2])
         with col3:
@@ -186,25 +186,31 @@ with col2:
     
     # 5. 날짜요일, 시간
     st.caption(current_date_time)
-# ------------------------------------
 
 
-# --- 시간별 예보 (줄 바꿈 반영) ---
+# --- 시간별 예보 (세로 배치 반영) ---
 st.subheader("시간별 예보")
 tlist = w["list"][:8]
-cols = st.columns(len(tlist))
+cols = st.columns(len(tlist)) # 8개의 열 생성
+
 for i, item in enumerate(tlist):
-    with cols[i]:
+    with cols[i]: # 각 열(column) 내부
         tt = pd.to_datetime(item["dt_txt"]).strftime("%H시")
         ti = item["main"]["temp"]
         p = item["pop"] * 100
         ic = fix_icon(item["weather"][0]["icon"])
         
-        st.image(f"http://openweathermap.org/img/wn/{ic}.png", width=50)
+        # 1. 시간
+        st.markdown(f"<div style='text-align: center; font-size: 0.9em;'>{tt}</div>", unsafe_allow_html=True)
         
-        # HTML <br> 태그와 unsafe_allow_html을 사용해 줄 바꿈
-        display_text = f"{tt}<br>**{int(ti)}°**<br>💧 {int(p)}%"
-        st.markdown(display_text, unsafe_allow_html=True)
+        # 2. 날씨 아이콘
+        st.image(f"http://openweathermap.org/img/wn/{ic}.png", width=50, use_column_width="always")
+        
+        # 3. 온도 (굵게 표시)
+        st.markdown(f"<div style='text-align: center; font-weight: bold; font-size: 1.1em;'>{int(ti)}°</div>", unsafe_allow_html=True)
+        
+        # 4. 강수량 (💧 이모지와 함께 표시)
+        st.markdown(f"<div style='text-align: center; font-size: 0.9em;'>💧 {int(p)}%</div>", unsafe_allow_html=True)
 # ----------------------------------
 
 
@@ -222,20 +228,20 @@ if air and "list" in air:
 else:
     st.write("대기질 정보 없음.")
 
-# --- 주간 예보 (헤더 반영) ---
+# --- 주간 예보 (간격 줄이기 반영) ---
 st.subheader("주간 날씨 예보")
 
-# 헤더 출력
+# 헤더 출력 (st.markdown ##### 사용 및 구분선 제거로 간격 최소화)
 header_cols = st.columns([1, 1, 1, 1, 1])
-with header_cols[0]: st.write("**날짜**")
-with header_cols[1]: st.write("**강수량**")
-with header_cols[2]: st.write("**날씨**")
-with header_cols[3]: st.write("**최고온도**")
-with header_cols[4]: st.write("**최저온도**")
-st.markdown("---") 
+with header_cols[0]: st.markdown("##### **날짜**")
+with header_cols[1]: st.markdown("##### **강수량**")
+with header_cols[2]: st.markdown("##### **날씨**")
+with header_cols[3]: st.markdown("##### **최고온도**")
+with header_cols[4]: st.markdown("##### **최저온도**")
+# st.markdown("---") 제거
 
 # daily DataFrame의 요일 처리
-daily["요일"] = daily["날짜"].dt.strftime("%a").map(weekday_map).fillna("오늘")
+daily["요일"] = daily["날짜"].dt.strftime("%a").map(weekday_map).fillna(daily["날짜"].dt.strftime("%a"))
 daily["요일"] = np.where(daily.index==0, "오늘", daily["요일"])
 
 # Streamlit을 사용해서 주간 예보 표시
