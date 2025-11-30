@@ -205,7 +205,8 @@ for i, item in enumerate(tlist):
         st.caption(tt)
         
         # 2. 날씨 아이콘 (use_column_width="always"로 가운데 정렬 효과)
-        st.image(f"http://openweathermap.org/img/wn/{ic}.png", width=50, use_column_width="always")
+        # 아이콘 크기 수정: width=50 -> width=30
+        st.image(f"http://openweathermap.org/img/wn/{ic}.png", **width=30**, use_column_width="always")
         
         # 3. 온도 (st.write와 볼드 마크다운)
         st.write(f"**{int(ti)}°**")
@@ -291,11 +292,11 @@ fig.update_layout(
         'type': 'date', 
         'tickmode': 'array',
         'tickvals': daily_tick_points, # 각 날짜의 정오를 라벨 위치로 사용
-        'ticktext': daily_labels_kr,  
-        'tickangle': 0,               # 수평 표시
+        'ticktext': daily_labels_kr, 
+        'tickangle': 0, 
         'showgrid': True,
         'zeroline': False,
-        'rangeselector': None,        
+        'rangeselector': None, 
         'rangeslider': {'visible': False}
     },
     margin=dict(t=30)
