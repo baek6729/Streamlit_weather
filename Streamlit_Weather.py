@@ -109,7 +109,7 @@ def weekly_summary(df, air_quality):
     elif avg_max >= 5:
         msg.append("이번 주는 쌀쌀한 편입니다. 가벼운 외투를 챙겨가주세요.")
     else:
-        msg.append("이번 주는 추운 날씨가 예상됩니다. 두꺼운 옷이 좋을거 같아요.")
+        msg.append("이번 주는 추운 날씨가 예상됩니다. 두꺼운 옷이 좋을것 같아요.")
 
     df["일교차"] = df["최고"] - df["최저"]
     avg_gap = df["일교차"].mean()
@@ -324,6 +324,7 @@ if st.button("조회"):
     load_weather(new_city)
 
 st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}))
+
 
 
 
