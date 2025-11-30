@@ -176,15 +176,17 @@ with col2:
     if today_max is not None:
         col3, col4, col5 = st.columns([0.4, 0.4, 1.2])
         with col3:
-            st.markdown(f"**$\u2191$ {int(today_max)}°**") # ↑ 
+            st.markdown(f"**$\u2191$ {int(today_max)}°**")
         with col4:
-            st.markdown(f"**$\u2193$ {int(today_min)}°**") # ↓ 
+            st.markdown(f"**$\u2193$ {int(today_min)}°**")
     
-    # 4. 체감온도 (st.caption 대신 st.write로 변경하고 볼드 추가)
+    # 4. 체감온도
     st.write(f"**체감 {int(fl)}°**")
     
-    # 5. 날짜요일, 시간 (st.caption 대신 st.write로 변경하고 볼드 추가)
+    # 5. 날짜요일, 시간
     st.write(f"**{current_date_time}**")
+
+st.divider() # 현재 날씨와 시간별 예보 구분
 
 
 # --- 시간별 예보 ---
@@ -211,8 +213,10 @@ for i, item in enumerate(tlist):
         # 4. 강수량 (💧 이모지와 함께 표시)
         st.markdown(f"<div style='text-align: center; font-size: 0.9em;'>💧 {int(p)}%</div>", unsafe_allow_html=True)
 
+st.divider() # 시간별 예보와 대기질 구분
 
-# 대기질
+
+# --- 대기질 ---
 st.subheader("대기질")
 if air and "list" in air:
     info = air["list"][0]
@@ -226,10 +230,13 @@ if air and "list" in air:
 else:
     st.write("대기질 정보 없음.")
 
+st.divider() # 대기질과 주간 예보 구분
+
+
 # --- 주간 예보 ---
 st.subheader("주간 날씨 예보")
 
-# 헤더 출력 (간격 최소화 적용)
+# 헤더 출력
 header_cols = st.columns([1, 1, 1, 1, 1])
 with header_cols[0]: st.markdown("##### **날짜**")
 with header_cols[1]: st.markdown("##### **강수량**")
@@ -250,6 +257,9 @@ for _, row in daily.iterrows():
     with c4: st.write(f"**{int(row['최고'])}°**")
     with c5: st.write(f"{int(row['최저'])}°")
 
+st.divider() # 주간 예보와 그래프 구분
+
+
 # --- 그래프 ---
 # st.subheader 제거
 
@@ -269,7 +279,7 @@ fig = go.Figure()
 fig.add_trace(go.Scatter(x=df["dt"], y=df["temp"], mode="lines+markers", name="온도"))
 fig.add_trace(go.Scatter(x=df["dt"], y=df["feel"], mode="lines+markers", name="체감온도"))
 
-# Plotly 레이아웃 설정 (제목, X축 수평 표시, 간격 조정 적용)
+# Plotly 레이아웃 설정
 fig.update_layout(
     title={
         'text': "온도 변화", 
@@ -294,16 +304,25 @@ fig.update_layout(
 )
 st.plotly_chart(fig, use_container_width=True)
 
-# 주간 조언
+st.divider() # 그래프와 주간 조언 구분
+
+
+# --- 주간 조언 ---
 st.subheader("주간 조언")
 st.info(weekly_summary(daily, air))
 
-# 다른 지역 조회
+st.divider() # 주간 조언과 다른 지역 조회 구분
+
+
+# --- 다른 지역 조회 ---
 st.subheader("다른 지역 조회")
 new_city = st.text_input("지역 입력", city)
 if st.button("조회 다시"):
     load_weather(new_city)
 
-# 지도
+st.divider() # 다른 지역 조회와 지도 구분
+
+
+# --- 지도 ---
 st.subheader("위치 지도")
 st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}))
