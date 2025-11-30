@@ -270,7 +270,7 @@ for i, d in enumerate(unique_dates):
 #-----------------
 
 
-st.subheader("이번주 온도")
+st.subheader("이번주 온도 변화")
 fig = go.Figure()
 fig.add_trace(go.Scatter(x=df["dt"], y=df["temp"], mode="lines+markers", name="온도"))
 fig.add_trace(go.Scatter(x=df["dt"], y=df["feel"], mode="lines+markers", name="체감온도"))
@@ -281,8 +281,8 @@ fig.update_layout(
         'tickmode': 'array',
         'tickvals': daily_tick_points,
         'ticktext': daily_labels_kr, 
-        'tickangle': 0
     },
+    margin=dict(t=30)
 )
 st.plotly_chart(fig, use_container_width=True)
 
@@ -297,6 +297,7 @@ new_city = st.text_input("지역 입력", city)
 if st.button("조회"):
     load_weather(new_city)
 st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}))
+
 
 
 
