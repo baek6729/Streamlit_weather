@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 import datetime
 
 # --- 설정 (변경 없음) ---
-API_KEY = "f2907b0b1e074199de1ba6fb1928665f" # (가상의 키로 대체)
+API_KEY = "f2907b0b1e074198de1ba6fb1928665f"
 
 BASE_URL = "http://api.openweathermap.org/data/2.5/forecast"
 GEO_URL = "http://api.openweathermap.org/geo/1.0/direct"
@@ -189,7 +189,7 @@ with col2:
 st.divider() # 현재 날씨와 시간별 예보 구분
 
 
-# --- 시간별 예보 (순수 Streamlit 위젯) ---
+# --- 시간별 예보 ---
 st.subheader("시간별 예보")
 tlist = w["list"][:8]
 cols = st.columns(len(tlist))
@@ -201,17 +201,17 @@ for i, item in enumerate(tlist):
         p = item["pop"] * 100
         ic = fix_icon(item["weather"][0]["icon"])
         
-        # 1. 시간 (st.caption: 작은 글씨)
-        st.caption(tt)
+        # 1. 시간
+        st.markdown(f"<div style='text-align: center; font-size: 0.9em;'>{tt}</div>", unsafe_allow_html=True)
         
-        # 2. 날씨 아이콘 (use_column_width로 가운데 정렬 효과)
+        # 2. 날씨 아이콘
         st.image(f"http://openweathermap.org/img/wn/{ic}.png", width=50, use_column_width="always")
         
-        # 3. 온도 (st.write와 볼드 마크다운)
-        st.write(f"**{int(ti)}°**")
+        # 3. 온도 (굵게 표시)
+        st.markdown(f"<div style='text-align: center; font-weight: bold; font-size: 1.1em;'>{int(ti)}°</div>", unsafe_allow_html=True)
         
-        # 4. 강수량 (st.caption: 작은 글씨)
-        st.caption(f"💧 {int(p)}%")
+        # 4. 강수량 (💧 이모지와 함께 표시)
+        st.markdown(f"<div style='text-align: center; font-size: 0.9em;'>💧 {int(p)}%</div>", unsafe_allow_html=True)
 
 st.divider() # 시간별 예보와 대기질 구분
 
@@ -261,6 +261,8 @@ st.divider() # 주간 예보와 그래프 구분
 
 
 # --- 그래프 ---
+# st.subheader 제거
+
 # X축 라벨을 위한 데이터 준비
 daily_start = df.groupby(df['dt'].dt.date)['dt'].min().tolist()
 daily_labels_en = [pd.to_datetime(dt).strftime('%a') for dt in daily_start]
