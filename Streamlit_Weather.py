@@ -188,9 +188,7 @@ with col2:
     st.markdown(f"### **{int(t)}°**")
     col3, col4 = st.columns([1, 1])
     with col3:
-        st.markdown(f"**↑ {int(today_max)}°**")
-    with col4:
-        st.markdown(f"**↓ {int(today_min)}°**")
+        st.markdown(f"**↑ {int(today_max)}°** / **↓ {int(today_min)}°**")
     st.write(f"**체감온도 {int(fl)}°**")
     st.write(f"**{current_date_time}**")
 
@@ -302,6 +300,7 @@ new_city = st.text_input("지역 입력", city)
 if st.button("조회"):
     load_weather(new_city)
 st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}))
+
 
 
 
