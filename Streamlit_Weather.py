@@ -56,8 +56,6 @@ def init_state():
 #-----------------
 
 
-
-
 def load_weather(city):
     ss = st.session_state
     query = city
@@ -326,6 +324,7 @@ if st.button("조회"):
     load_weather(new_city)
 
 st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}))
+
 
 
 
