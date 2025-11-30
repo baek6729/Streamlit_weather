@@ -227,7 +227,30 @@ else:
     st.markdown(f"{current_time_kst}")
     st.markdown("---")
     
-    # 2. 미세먼지 정보
+    # 3. 시간별 예보 (순서 변경: 2번으로 이동)
+    st.markdown("### ⏰ 시간별 예보")
+    forecast_list_24hr = data['list'][:8]
+    cols = st.columns(len(forecast_list_24hr))
+    for i, item in enumerate(forecast_list_24hr):
+        with cols[i]:
+            time_str = pd.to_datetime(item['dt_txt']).tz_localize('UTC').tz_convert('Asia/Seoul').strftime('%H시')
+            temp = item['main']['temp']
+            
+            # 아이콘 통일 로직 적용
+            weather_icon_code = normalize_icon_code(item['weather'][0]['icon'])
+            
+            pop = item['pop'] * 100
+            st.markdown(f"""
+            <div style="text-align: center; padding: 5px;">
+                <p style="font-weight: bold; margin-bottom: 5px;">{time_str}</p>
+                <img src="http://openweathermap.org/img/wn/{weather_icon_code}.png" alt="날씨 아이콘" style="width: 40px; height: 40px;"/>
+                <p style="font-size: 1.1em; margin-top: 5px; margin-bottom: 5px;">{temp:.0f}°</p>
+                <p style="font-size: 0.8em; color: #888; margin: 0;">💧 {pop:.0f}%</p>
+            </div>
+            """, unsafe_allow_html=True)
+    st.markdown("---")
+
+    # 2. 미세먼지 정보 (순서 변경: 3번으로 이동)
     st.markdown("### 💨 현재 대기 질 정보")
     if pollution_response and 'list' in pollution_response:
         current_air = pollution_response['list'][0]
@@ -252,29 +275,6 @@ else:
         """, unsafe_allow_html=True)
     else:
         st.warning("미세먼지 정보를 가져오는 데 실패했습니다.")
-    st.markdown("---")
-
-    # 3. 시간별 예보
-    st.markdown("### ⏰ 시간별 예보")
-    forecast_list_24hr = data['list'][:8]
-    cols = st.columns(len(forecast_list_24hr))
-    for i, item in enumerate(forecast_list_24hr):
-        with cols[i]:
-            time_str = pd.to_datetime(item['dt_txt']).tz_localize('UTC').tz_convert('Asia/Seoul').strftime('%H시')
-            temp = item['main']['temp']
-            
-            # 아이콘 통일 로직 적용
-            weather_icon_code = normalize_icon_code(item['weather'][0]['icon'])
-            
-            pop = item['pop'] * 100
-            st.markdown(f"""
-            <div style="text-align: center; padding: 5px;">
-                <p style="font-weight: bold; margin-bottom: 5px;">{time_str}</p>
-                <img src="http://openweathermap.org/img/wn/{weather_icon_code}.png" alt="날씨 아이콘" style="width: 40px; height: 40px;"/>
-                <p style="font-size: 1.1em; margin-top: 5px; margin-bottom: 5px;">{temp:.0f}°</p>
-                <p style="font-size: 0.8em; color: #888; margin: 0;">💧 {pop:.0f}%</p>
-            </div>
-            """, unsafe_allow_html=True)
     st.markdown("---")
     
     # 4. 일별 요약 (주간 예보)
@@ -311,7 +311,7 @@ else:
                                    '내일' if x == today + datetime.timedelta(days=1) else 
                                    KOREAN_WEEKDAYS_MAP[x.weekday()])
 
-    # ★★★ 수정된 주간 날씨 테이블 헤더 (모든 글자 크기 1.2em으로 통일) ★★★
+    # 주간 날씨 테이블 헤더 (모든 글자 크기 1.2em으로 통일)
     st.markdown(f"""
     <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 2px solid #333; margin-bottom: 5px; font-weight: bold; color: #000; font-size: 1.2em;">
         <div style="width: 15%; text-align: center;">요일</div>
