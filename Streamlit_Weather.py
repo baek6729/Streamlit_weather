@@ -285,7 +285,7 @@ for _, r in daily.iterrows():
     st.markdown(
         f"""
         <div style="display:flex;align-items:center; gap:20px; padding:8px 0;">
-            <div style="width:80px;"><b>{r['index'] if 'index' in r else pd.to_datetime(r['index']) if 'index' in r else r['index'] if 'index' in r else r['index']}</b></div>
+            <div style="width:80px;"><b>{pd.to_datetime(r['dt']).strftime('%m-%d')}</b></div>
             <img src="http://openweathermap.org/img/wn/{ic}.png" width="40">
             <div style="flex:1;">최고 {int(r['최고'])}° / 최저 {int(r['최저'])}°</div>
             <div style="width:80px; text-align:center;">💧 {r['강수']:.0f}%</div>
