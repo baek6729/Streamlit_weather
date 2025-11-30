@@ -34,7 +34,17 @@ def contains_hangul(text):
             return True
     return False
 
+# --- 공통 함수: 아이콘 통일 로직 ---
+def normalize_icon_code(code):
+    """밤 아이콘을 낮으로 통일하고, 짙은 구름을 일반 구름으로 대체"""
+    if code.endswith('n'):
+        code = code[:-1] + 'd'
+    if code == '04d':
+        code = '03d'
+    return code
+
 # --- 세션 상태 및 데이터 가져오기 함수 (생략) ---
+
 def initialize_session_state():
     if 'search_performed' not in st.session_state:
         st.session_state.search_performed = False
@@ -138,7 +148,6 @@ def get_weekly_summary_text(daily_summary, pollution_response):
     if air_advice:
         summary_list.append(air_advice)
 
-    # 비/눈/대기질 이슈가 없고 온도가 적당할 때 일반 날씨 조언 추가
     if not rain_advice and not air_advice and 16 <= avg_max_temp < 27:
         summary_list.append("☀️ **맑고 좋은 날씨**가 예상되니, 즐거운 한 주 보내세요!")
         
@@ -165,61 +174,56 @@ else:
     pollution_response = st.session_state.city_data['pollution_response']
     display_city_name = st.session_state.city_data['display_city_name']
     
-    # 1. 상단 현재 날씨 정보
+    # 1. 상단 현재 날씨 정보 (아이콘 통일 로직 적용)
     st.markdown(f"## {display_city_name}")
     
     current_weather = data['list'][0]
     current_temp = current_weather['main']['temp']
-    
     forecast_list_24hr = data['list'][:8] 
     min_temp = min(item['main']['temp_min'] for item in forecast_list_24hr)
     max_temp = max(item['main']['temp_max'] for item in forecast_list_24hr)
-    
     feels_like = current_weather['main']['feels_like']
     current_desc_en = current_weather['weather'][0]['description']
     current_desc_kr = WEATHER_TRANSLATION.get(current_desc_en, current_desc_en)
     weather_icon_code = current_weather['weather'][0]['icon']
     current_dt_utc = pd.to_datetime(current_weather['dt_txt']).tz_localize('UTC')
     current_time_kst = current_dt_utc.tz_convert('Asia/Seoul').strftime('%m월 %d일, 오후 %I:%M')
-
-    # 💥 현재 날씨 아이콘 통일 로직 적용
-    if weather_icon_code.endswith('n'):
-        weather_icon_code = weather_icon_code[:-1] + 'd'
-    if weather_icon_code == '04d':
-        weather_icon_code = '03d'
-    # ------------------------------------
+    
+    weather_icon_code = normalize_icon_code(weather_icon_code) # 아이콘 통일
 
     st.markdown(f"""
-    <div style="display: flex; align-items: center; justify-content: flex-start; gap: 20px;">
-        <h1 style="font-size: 5em; margin: 0;">{current_temp:.0f}°</h1>
+    <div style="display: flex; align-items: center; justify-content: flex-start; gap: 20px; color: #333; font-size: 1.2em;">
+        <h1 style="font-size: 5em; margin: 0; color: #333;">{current_temp:.0f}°</h1>
         <img src="http://openweathermap.org/img/wn/{weather_icon_code}@2x.png" alt="날씨 아이콘" style="width: 100px; height: 100px;"/>
     </div>
     """, unsafe_allow_html=True)
-    st.markdown(f"**{current_desc_kr}**")
-    st.markdown(f"⬆️{max_temp:.0f}° / ⬇️{min_temp:.0f}°")
-    st.markdown(f"체감온도 {feels_like:.0f}°")
-    st.markdown(f"{current_time_kst}")
+    st.markdown(f"<span style='color: #333; font-size: 1.2em;'>**{current_desc_kr}**</span>", unsafe_allow_html=True)
+    st.markdown(f"<span style='color: #333; font-size: 1.2em;'>⬆️{max_temp:.0f}° / ⬇️{min_temp:.0f}°</span>", unsafe_allow_html=True)
+    st.markdown(f"<span style='color: #333; font-size: 1.2em;'>체감온도 {feels_like:.0f}°</span>", unsafe_allow_html=True)
+    st.markdown(f"<span style='color: #333; font-size: 1.2em;'>{current_time_kst}</span>", unsafe_allow_html=True)
     st.markdown("---")
     
     # 2. 미세먼지 정보 (생략)
+    # ... (미세먼지 섹션은 중앙 정렬 및 폰트 크기 변경이 어렵고, 현재 UI 유지) ...
     st.markdown("### 💨 현재 대기 질 정보")
     if pollution_response and 'list' in pollution_response:
         current_air = pollution_response['list'][0]
         aqi = current_air['main']['aqi']
         aqi_status_kr, aqi_emoji = AQI_STATUS.get(aqi, ("알 수 없음", "❓"))
         components = current_air['components']
+        # 폰트 크기 증가 및 색상 통일 (중앙 정렬은 생략)
         st.markdown(f"""
-        <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px;">
-            <div style="text-align: center;">
-                <p style="margin:0; font-size: 1.2em;">AQI {aqi_emoji}</p>
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px; color: #333; font-size: 1.1em;">
+            <div style="text-align: center; width: 33%;">
+                <p style="margin:0; font-size: 1.3em;">AQI {aqi_emoji}</p>
                 <p style="margin:0; font-weight: bold;">{aqi_status_kr}</p>
             </div>
-            <div style="text-align: center;">
-                <p style="margin:0; font-size: 0.9em;">PM2.5</p>
+            <div style="text-align: center; width: 33%;">
+                <p style="margin:0; font-size: 1.1em;">PM2.5</p>
                 <p style="margin:0; font-weight: bold;">{components.get('pm2_5', 'N/A'):.1f} &micro;g/m&sup3;</p> 
             </div>
-            <div style="text-align: center;">
-                <p style="margin:0; font-size: 0.9em;">PM10</p>
+            <div style="text-align: center; width: 33%;">
+                <p style="margin:0; font-size: 1.1em;">PM10</p>
                 <p style="margin:0; font-weight: bold;">{components.get('pm10', 'N/A'):.1f} &micro;g/m&sup3;</p>
             </div>
         </div>
@@ -238,20 +242,16 @@ else:
             temp = item['main']['temp']
             weather_icon_code = item['weather'][0]['icon']
             
-            # 💥 시간별 예보 아이콘 통일 로직 적용
-            if weather_icon_code.endswith('n'):
-                weather_icon_code = weather_icon_code[:-1] + 'd'
-            if weather_icon_code == '04d':
-                weather_icon_code = '03d'
-            # ------------------------------------
+            weather_icon_code = normalize_icon_code(weather_icon_code) # 아이콘 통일
 
             pop = item['pop'] * 100
+            # 폰트 크기 증가 및 색상 통일 (중앙 정렬 유지)
             st.markdown(f"""
-            <div style="text-align: center; padding: 5px;">
+            <div style="text-align: center; padding: 5px; color: #333; font-size: 1.1em;">
                 <p style="font-weight: bold; margin-bottom: 5px;">{time_str}</p>
                 <img src="http://openweathermap.org/img/wn/{weather_icon_code}.png" alt="날씨 아이콘" style="width: 40px; height: 40px;"/>
-                <p style="font-size: 1.1em; margin-top: 5px; margin-bottom: 5px;">{temp:.0f}°</p>
-                <p style="font-size: 0.8em; color: #888; margin: 0;">💧 {pop:.0f}%</p>
+                <p style="font-size: 1.3em; margin-top: 5px; margin-bottom: 5px;">{temp:.0f}°</p>
+                <p style="font-size: 1.1em; color: #888; margin: 0;">💧 {pop:.0f}%</p>
             </div>
             """, unsafe_allow_html=True)
     st.markdown("---")
@@ -273,13 +273,25 @@ else:
         } for item in data['list']]
     )
     
-    # 일별 요약
+    # 일별 요약 및 오전/오후 날씨 아이콘 추출
     daily_summary = df_full.groupby(df_full['날짜/시간'].dt.date).agg(
         요일=('요일', 'first'),
         최고온도=('최고온도_raw', np.max),
         최저온도=('최저온도_raw', np.min),
-        대표날씨_아이콘=('날씨_아이콘', lambda x: x.mode()[0]),
-        평균강수확률=('강수확률', np.mean)
+        평균강수확률=('강수확률', np.mean),
+        
+        # 오전 (09시) 날씨 아이콘 추출
+        오전_아이콘=('날씨_아이콘', 
+                lambda x: x[df_full['날짜/시간'].dt.time.isin([datetime.time(9,0,0)])].mode().iloc[0] 
+                if not x[df_full['날짜/시간'].dt.time.isin([datetime.time(9,0,0)])].empty else 
+                x.mode().iloc[0]),
+        
+        # 오후 (15시) 날씨 아이콘 추출
+        오후_아이콘=('날씨_아이콘', 
+                lambda x: x[df_full['날짜/시간'].dt.time.isin([datetime.time(15,0,0)])].mode().iloc[0] 
+                if not x[df_full['날짜/시간'].dt.time.isin([datetime.time(15,0,0)])].empty else 
+                x.mode().iloc[0])
+        
     ).reset_index()
     
     KOREAN_WEEKDAYS_MAP = {0: '월', 1: '화', 2: '수', 3: '목', 4: '금', 5: '토', 6: '일'}
@@ -290,42 +302,55 @@ else:
                                     '내일' if x == today + datetime.timedelta(days=1) else 
                                     KOREAN_WEEKDAYS_MAP[x.weekday()])
 
-    # 주간 날씨 테이블 헤더 추가
+    # --- 주간 날씨 테이블 헤더 추가 (오전/오후 분할 적용 및 가운데 정렬) ---
     st.markdown(f"""
-    <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #ddd; margin-bottom: 5px; font-weight: bold; color: #555;">
-        <div style="width: 15%;">요일</div>
-        <div style="width: 15%; text-align: left; font-size: 0.9em;">강수확률</div>
-        <div style="width: 20%; text-align: center;">날씨</div>
-        <div style="width: 25%; text-align: right;">최고 온도</div>
-        <div style="width: 25%; text-align: right;">최저 온도</div>
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #ddd; margin-bottom: 5px; font-weight: bold; color: #333; font-size: 1.2em; text-align: center;">
+        <div style="width: 15%; margin: auto;">요일</div>
+        <div style="width: 15%; margin: auto;">강수확률</div>
+        <div style="width: 20%; margin: auto;">날씨</div>
+        <div style="width: 25%; margin: auto;">최고 온도</div>
+        <div style="width: 25%; margin: auto;">최저 온도</div>
+    </div>
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 0 5px 0; border-bottom: 1px solid #ddd; font-weight: normal; color: #555; font-size: 1em; text-align: center;">
+        <div style="width: 15%;"></div>
+        <div style="width: 15%;"></div>
+        <div style="width: 20%; display: flex; justify-content: space-around;">
+            <div style="width: 50%;">오전</div> 
+            <div style="width: 50%;">오후</div>
+        </div>
+        <div style="width: 25%;"></div>
+        <div style="width: 25%;"></div>
     </div>
     """, unsafe_allow_html=True)
-    
+    # ---------------------------------------------
+
     for index, row in daily_summary.iterrows():
         day_label = row['요일']
         max_t = row['최고온도']
         min_t = row['최저온도']
-        weather_icon_code = row['대표날씨_아이콘']
-
-        # 💥 주간 예보 아이콘 통일 로직 적용
-        if weather_icon_code.endswith('n'):
-            weather_icon_code = weather_icon_code[:-1] + 'd'
-        if weather_icon_code == '04d':
-            weather_icon_code = '03d'
-        # ------------------------------------
-
         avg_pop = row['평균강수확률']
         
-        # 데이터 행
+        # 아이콘 코드 통일 로직 적용
+        morning_icon = normalize_icon_code(row['오전_아이콘'])
+        afternoon_icon = normalize_icon_code(row['오후_아이콘'])
+        
+        # 데이터 행 (가운데 정렬 및 폰트 크기, 색상 통일)
         st.markdown(f"""
-        <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0;">
-            <div style="width: 15%; font-weight: bold;">{day_label}</div>
-            <div style="width: 15%; text-align: left; font-size: 0.9em; color: #888;">💧 {avg_pop:.0f}%</div>
-            <div style="width: 20%; text-align: center;">
-                <img src="http://openweathermap.org/img/wn/{weather_icon_code}.png" alt="날씨 아이콘" style="width: 40px; height: 40px;"/>
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 0; color: #333; font-size: 1.3em; text-align: center;">
+            <div style="width: 15%; font-weight: bold; margin: auto;">{day_label}</div>
+            <div style="width: 15%; margin: auto; font-size: 1.1em; color: #555;">💧 {avg_pop:.0f}%</div>
+            
+            <div style="width: 20%; display: flex; justify-content: space-around; align-items: center;">
+                <div style="width: 50%;">
+                    <img src="http://openweathermap.org/img/wn/{morning_icon}.png" alt="오전 날씨" style="width: 40px; height: 40px;"/>
+                </div>
+                <div style="width: 50%;">
+                    <img src="http://openweathermap.org/img/wn/{afternoon_icon}.png" alt="오후 날씨" style="width: 40px; height: 40px;"/>
+                </div>
             </div>
-            <div style="width: 25%; text-align: right; font-weight: bold;">{max_t:.0f}°</div>
-            <div style="width: 25%; text-align: right; color: #888;">{min_t:.0f}°</div>
+            
+            <div style="width: 25%; font-weight: bold; margin: auto;">{max_t:.0f}°</div>
+            <div style="width: 25%; margin: auto; color: #555;">{min_t:.0f}°</div>
         </div>
         """, unsafe_allow_html=True)
         st.markdown("---")
@@ -347,18 +372,15 @@ else:
     st.plotly_chart(fig, use_container_width=True)
     st.markdown("---")
 
-    # 6. 주간 날씨 분석 및 조언
+    # 6. 주간 날씨 분석 및 조언 (생략)
     st.markdown("### 💡 이번 주 날씨 조언")
-    
     summary_text = get_weekly_summary_text(daily_summary, pollution_response)
-    
     st.info(summary_text)
     st.markdown("---")
         
     # 7. 현재 위치 지도 (생략)
     lat = st.session_state.city_data['lat']
     lon = st.session_state.city_data['lon']
-    
     st.markdown("### 🗺️ 현재 위치 지도")
     map_data = pd.DataFrame({'lat': [lat], 'lon': [lon]})
     st.map(map_data, zoom=10)
@@ -367,7 +389,6 @@ else:
 
     # 8. 다른 지역 검색 (생략)
     st.markdown("### 📍 다른 지역 검색")
-    
     new_city_name_input = st.text_input("새로운 지명 입력", display_city_name, key="new_city_input")
     if st.button("날씨 정보 다시 가져오기"):
         if new_city_name_input:
