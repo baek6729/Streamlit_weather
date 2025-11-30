@@ -296,7 +296,8 @@ st.subheader("다른 지역 조회")
 new_city = st.text_input("지역 입력", city)
 if st.button("조회"):
     load_weather(new_city)
-st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}))
+st.map()
+
 
 
 
