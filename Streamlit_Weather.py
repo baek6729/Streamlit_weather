@@ -140,7 +140,7 @@ else:
     
     st.markdown("---")
     
-    # 2. 미세먼지 정보 (테두리 및 배경색 완전히 제거)
+    # 2. 미세먼지 정보 
     st.markdown("### 💨 현재 대기 질 정보")
     if pollution_response and 'list' in pollution_response:
         current_air = pollution_response['list'][0]
@@ -198,7 +198,6 @@ else:
     df_full = pd.DataFrame(
         [{
             '날짜/시간': pd.to_datetime(item['dt_txt']),
-            # 초기 요일 설정은 사용하지 않지만, 데이터프레임 구조를 위해 남겨둡니다.
             '요일': pd.to_datetime(item['dt_txt']).tz_localize('UTC').tz_convert('Asia/Seoul').strftime('%a'), 
             '예상온도 (°C)': item['main']['temp'],
             '체감온도 (°C)': item['main']['feels_like'],
@@ -217,18 +216,28 @@ else:
         평균강수확률=('강수확률', np.mean)
     ).reset_index()
     
-    # 요일을 한글로 변환하는 맵 (월=0, 일=6)
     KOREAN_WEEKDAYS_MAP = {
         0: '월', 1: '화', 2: '수', 3: '목', 4: '금', 5: '토', 6: '일'
     }
     
     today = datetime.datetime.now().date()
     
-    # '오늘', '내일'을 제외한 요일을 한글로 변환
     daily_summary['요일'] = daily_summary['날짜/시간'].apply(lambda x: 
                                     '오늘' if x == today else 
                                     '내일' if x == today + datetime.timedelta(days=1) else 
-                                    KOREAN_WEEKDAYS_MAP[x.weekday()]) # .weekday()는 월(0)~일(6) 반환
+                                    KOREAN_WEEKDAYS_MAP[x.weekday()])
+
+    # --- 주간 날씨 테이블 헤더 추가 ---
+    st.markdown(f"""
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #ddd; margin-bottom: 5px; font-weight: bold; color: #555;">
+        <div style="width: 15%;">요일</div>
+        <div style="width: 15%; text-align: left; font-size: 0.9em;">강수확률</div>
+        <div style="width: 20%; text-align: center;">날씨</div>
+        <div style="width: 25%; text-align: right;">최고 온도</div>
+        <div style="width: 25%; text-align: right;">최저 온도</div>
+    </div>
+    """, unsafe_allow_html=True)
+    # ---------------------------------------------
 
     for index, row in daily_summary.iterrows():
         day_label = row['요일']
@@ -237,6 +246,7 @@ else:
         weather_icon_code = row['대표날씨_아이콘']
         avg_pop = row['평균강수확률']
         
+        # 데이터 행
         st.markdown(f"""
         <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 0;">
             <div style="width: 15%; font-weight: bold;">{day_label}</div>
@@ -255,18 +265,16 @@ else:
     
     # Plotly Figure 생성
     fig = go.Figure()
-    # 예상 온도 트레이스
     fig.add_trace(go.Scatter(x=df_full['날짜/시간'], y=df_full['예상온도 (°C)'], 
                              mode='lines+markers', name='예상온도 (°C)', line=dict(color='orange')))
-    # 체감 온도 트레이스
     fig.add_trace(go.Scatter(x=df_full['날짜/시간'], y=df_full['체감온도 (°C)'], 
                              mode='lines+markers', name='체감온도 (°C)', line=dict(color='blue', dash='dot')))
     
     # 레이아웃 설정
     fig.update_layout(
         xaxis=dict(
-            title="날짜/시간",
-            tickformat="%m-%d %H시", 
+            title="날짜",
+            tickformat="%m-%d",  
             tickangle=0,
         ),
         yaxis_title="온도 (°C)",
