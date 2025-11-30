@@ -176,15 +176,15 @@ with col2:
     if today_max is not None:
         col3, col4, col5 = st.columns([0.4, 0.4, 1.2])
         with col3:
-            st.markdown(f"**$\u2191$ {int(today_max)}°**")
+            st.markdown(f"**$\u2191$ {int(today_max)}°**") # ↑ 
         with col4:
-            st.markdown(f"**$\u2193$ {int(today_min)}°**")
+            st.markdown(f"**$\u2193$ {int(today_min)}°**") # ↓ 
     
-    # 4. 체감온도
-    st.caption(f"체감 {int(fl)}°")
+    # 4. 체감온도 (st.caption 대신 st.write로 변경하고 볼드 추가)
+    st.write(f"**체감 {int(fl)}°**")
     
-    # 5. 날짜요일, 시간
-    st.caption(current_date_time)
+    # 5. 날짜요일, 시간 (st.caption 대신 st.write로 변경하고 볼드 추가)
+    st.write(f"**{current_date_time}**")
 
 
 # --- 시간별 예보 ---
@@ -265,19 +265,26 @@ unique_dates = sorted(df['dt'].dt.date.unique())
 daily_tick_points = [datetime.datetime.combine(d, datetime.time(12, 0)) for d in unique_dates]
 
 # Plotly 그래프 생성
-st.subheader("일주일 날씨")
 fig = go.Figure()
 fig.add_trace(go.Scatter(x=df["dt"], y=df["temp"], mode="lines+markers", name="온도"))
 fig.add_trace(go.Scatter(x=df["dt"], y=df["feel"], mode="lines+markers", name="체감온도"))
 
 # Plotly 레이아웃 설정 (제목, X축 수평 표시, 간격 조정 적용)
 fig.update_layout(
+    title={
+        'text': "온도 변화", 
+        'x': 0.05, 
+        'xanchor': 'left',
+        'y': 0.95, 
+        'yanchor': 'top',
+        'font': {'size': 24}
+    },
     xaxis={
         'type': 'date', 
         'tickmode': 'array',
-        'tickvals': daily_tick_points, # 각 날짜의 정오를 라벨 위치로 사용
+        'tickvals': daily_tick_points, 
         'ticktext': daily_labels_kr,  
-        'tickangle': 0,               # 수평 표시
+        'tickangle': 0,               
         'showgrid': True,
         'zeroline': False,
         'rangeselector': None,        
@@ -300,4 +307,3 @@ if st.button("조회 다시"):
 # 지도
 st.subheader("위치 지도")
 st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}))
-
