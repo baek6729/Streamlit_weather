@@ -218,10 +218,10 @@ st.divider()
 #-----------------시간별 예보
 
 
-tlist = weather["list"][:8]
-cols = st.columns(len(tlist))
+todaylist = weather["list"][:8]
+cols = st.columns(len(todaylist))
 
-for i, item in enumerate(tlist):
+for i, item in enumerate(todaylist):
     with cols[i]:
         tt = pd.to_datetime(item["dt_txt"]).strftime("%H시")
         ti = item["main"]["temp"]
