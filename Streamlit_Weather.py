@@ -301,10 +301,12 @@ for i, d in enumerate(unique_dates):
 
 st.subheader("이번주 온도 변화")
 
-# 1. Matplotlib Figure와 Axes 생성
+# Matplotlib 그래프 생성 및 설정의 핵심 로직
+
+# 1. Figure와 Axes 객체 생성 (캔버스 준비)
 fig, ax = plt.subplots(figsize=(10, 4))
 
-# 2. 온도 (temp) 플롯 추가
+# 2. '온도' 데이터 플롯 (선과 원형 마커)
 ax.plot(
     forecast_df["dt"], 
     forecast_df["temp"], 
@@ -314,7 +316,7 @@ ax.plot(
     color='blue'
 )
 
-# 3. 체감온도 (feel) 플롯 추가
+# 3. '체감온도' 데이터 플롯 (점선과 X 마커)
 ax.plot(
     forecast_df["dt"], 
     forecast_df["feel"], 
@@ -324,7 +326,7 @@ ax.plot(
     color='orange'
 )
 
-# 4. 축 및 범례 설정 (날짜 축 라벨은 기존 코드를 활용)
+# 4. 축 레이블 및 범례 설정
 ax.set_xticks(tick_points)
 ax.set_xticklabels(tick_labels)
 ax.set_xlabel("요일")
@@ -332,9 +334,6 @@ ax.set_ylabel("온도 (°C)")
 ax.set_title(f"{city} 이번주 온도 변화", fontsize=14)
 ax.grid(True, linestyle='--', alpha=0.6)
 ax.legend(loc='upper right')
-
-# 5. Streamlit에 Matplotlib 그래프 표시
-st.pyplot(fig) # ⬅️ st.plotly_chart 대신 st.pyplot 사용
 
 st.info(weekly_summary(daily_df, air_quality))
 
@@ -351,6 +350,7 @@ if st.button("조회"):
     load_weather(new_city)
 
 st.map(pd.DataFrame({"lat": [lat], "lon": [lon]}))
+
 
 
 
